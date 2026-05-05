@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>PayPal Payment - Xyoo Shop</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a0f2e 50%, #0f0f1e 100%);
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .payment-box {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .payment-box h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #f472b6, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .order-details {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .order-details p { margin: 10px 0; font-size: 16px; }
+        .paypal-link {
+            background: #1a1a2e;
+            border: 2px solid #ec4899;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .paypal-link a {
+            color: #22c55e;
+            font-size: 20px;
+            font-weight: 700;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .instruction {
+            color: #b8b0c8;
+            margin: 20px 0;
+            line-height: 1.6;
+            text-align: left;
+        }
+        .btn {
+            background: linear-gradient(to right, #ec4899, #a855f7);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+            margin: 10px 5px;
+        }
+        .btn:hover { transform: scale(1.02); }
+        .btn-secondary {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+        }
+        .highlight { color: #f472b6; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="payment-box">
+        <h1>🌍 PayPal Payment</h1>
+        <div class="order-details">
+            <p><strong>Order ID:</strong> <span id="displayOrderId">Loading...</span></p>
+            <p><strong>Total Amount:</strong> $<span id="displayTotal">0.00</span></p>
+            <p><strong>Status:</strong> <span style="color: #eab308;">⏳ Awaiting Payment</span></p>
+        </div>
+        <div class="paypal-link">
+            <p style="margin-bottom: 10px;">Send payment to:</p>
+            <a href="https://www.paypal.me/XyooShop2" target="_blank" id="paypalLink">paypal.me/XyooShop2</a>
+        </div>
+        <div class="instruction">
+            <p><strong>📋 Steps:</strong></p>
+            <p>1️⃣ Click the link above and send <strong>$<span id="totalAmount">0.00</span></strong>.</p>
+            <p>2️⃣ In the note, include your Order ID: <span class="highlight" id="orderIdNote"></span>.</p>
+            <p>3️⃣ After sending, click "Done Payment" to create your order thread.</p>
+            <p>4️⃣ Mention <strong>@xyoo0_.</strong> in the thread that you've paid via PayPal.</p>
+        </div>
+        <div>
+            <button class="btn" id="doneBtn" onclick="goToThread()">✅ Done Payment</button>
+            <a href="/" class="btn btn-secondary">🏠 Back to Shop</a>
+        </div>
+    </div>
+    <script>
+        const API_KEY = 'fzRFHIqB8u2WCU5mvGyPZK4tdj9Yw3gcrhLE7MSnVoeiplskTXaQO6bN0AxDJ1'; // REPLACE WITH ACTUAL API_SECRET
+        const GUILD_ID = '1129463696737972267';
+        const params = new URLSearchParams(window.location.search);
+        const orderId = params.get('order') || 'N/A';
+        const total = params.get('total') || '0.00';
+
+        document.getElementById('displayOrderId').textContent = orderId;
+        document.getElementById('displayTotal').textContent = parseFloat(total).toFixed(2);
+        document.getElementById('totalAmount').textContent = parseFloat(total).toFixed(2);
+        document.getElementById('orderIdNote').textContent = orderId;
+        document.getElementById('paypalLink').href = `https://www.paypal.me/XyooShop2/${total}`;
+
+        async function goToThread() {
+            const btn = document.getElementById('doneBtn');
+            btn.disabled = true;
+            btn.textContent = 'Creating thread...';
+
+            const orders = JSON.parse(localStorage.getItem('xyoo_orders') || '[]');
+            const order = orders.find(o => o.id === orderId);
+            if (!order) {
+                alert('Order not found. Please contact support.');
+                btn.disabled = false;
+                btn.textContent = '✅ Done Payment';
+                return;
+            }
+
+            const orderData = {
+                orderId: order.id,
+                date: order.date,
+                items: order.items.map(item => ({ name: item.name, price: item.price, quantity: item.quantity })),
+                total: order.total,
+                paymentMethod: '🌍 PAYPAL',
+                discordUser: order.discordUser || ''
+            };
+
+            try {
+                const res = await fetch('/api/order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': API_KEY
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to create thread');
+
+                order.status = 'Payment Sent';
+                localStorage.setItem('xyoo_orders', JSON.stringify(orders));
+                window.location.href = `https://discord.com/channels/${GUILD_ID}/${data.thread_id}`;
+            } catch (err) {
+                console.error(err);
+                alert('Failed to create order thread. Please contact support on Discord.');
+                btn.disabled = false;
+                btn.textContent = '✅ Done Payment';
+            }
+        }
+    </script>
+</body>
+</html>
