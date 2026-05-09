@@ -18,11 +18,8 @@ PORT = int(os.getenv('PORT', 8080))
 SUPPORT_USER_ID = 592402229978333331
 VOUCH_CHANNEL_ID = int(os.getenv('VOUCH_CHANNEL_ID', '0'))
 
-# Render will provide the correct URL later
 WEBSITE_URL = os.getenv('WEBSITE_URL', 'http://localhost:8080')
-
-# Optional: banner image (replace with your actual GIF URL)
-YOUR_IMAGE_URL = "https://cdn.discordapp.com/attachments/1124170237089165325/1496726350101217402/standard.gif?ex=6a000689&is=69feb509&hm=ee041cbdb8e208d84d4659be620e577ebbe0ac544995a04173c9ef70c32e4dfb"
+YOUR_IMAGE_URL = "https://cdn.discordapp.com/attachments/.../your-banner.gif"
 
 EMBED_COLOR = discord.Color.from_rgb(186, 85, 211)
 GOLD_COLOR = discord.Color.gold()
@@ -324,10 +321,13 @@ async def process_order(order_data):
 
     embed = get_order_embed(order_data, customer_discord, customer_added, member)
     await thread.send(embed=embed)
+
     ping = f"📢 New order! <@{SUPPORT_USER_ID}>"
     if customer_discord:
-        ping += f"\n✅ {member.mention} added." if customer_added else f"\n⚠️ `{customer_discord}` not found."
-    ping += "\n💡 /request-vouch | /close"
+        if customer_added:
+            ping += f"\n{member.mention} Please send your payment receipt here to claim your order."
+        else:
+            ping += f"\n⚠️ Customer `{customer_discord}` was not found. They may need to be added manually."
     await thread.send(ping)
     return thread.id
 
@@ -367,10 +367,7 @@ async def submit_code():
 async def on_ready():
     logger.info(f"✅ Bot online as {bot.user}")
 
-# ================== ENTRY POINT (FIXED FOR PYTHON 3.14) ==================
-
 async def main():
-    # Run Discord bot and Quart web server concurrently
     await asyncio.gather(
         bot.start(DISCORD_TOKEN),
         app.run_task(host='0.0.0.0', port=PORT)
