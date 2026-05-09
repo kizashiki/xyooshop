@@ -21,8 +21,8 @@ VOUCH_CHANNEL_ID = int(os.getenv('VOUCH_CHANNEL_ID', '0'))
 # Render will provide the correct URL later
 WEBSITE_URL = os.getenv('WEBSITE_URL', 'http://localhost:8080')
 
-# Optional: banner image
-YOUR_IMAGE_URL = "https://cdn.discordapp.com/attachments/.../your-banner.gif"
+# Optional: banner image (replace with your actual GIF URL)
+YOUR_IMAGE_URL = "https://cdn.discordapp.com/attachments/1124170237089165325/1496726350101217402/standard.gif?ex=6a000689&is=69feb509&hm=ee041cbdb8e208d84d4659be620e577ebbe0ac544995a04173c9ef70c32e4dfb"
 
 EMBED_COLOR = discord.Color.from_rgb(186, 85, 211)
 GOLD_COLOR = discord.Color.gold()
@@ -367,12 +367,16 @@ async def submit_code():
 async def on_ready():
     logger.info(f"✅ Bot online as {bot.user}")
 
+# ================== ENTRY POINT (FIXED FOR PYTHON 3.14) ==================
+
 async def main():
-    await app.run_task(host='0.0.0.0', port=PORT)
+    # Run Discord bot and Quart web server concurrently
+    await asyncio.gather(
+        bot.start(DISCORD_TOKEN),
+        app.run_task(host='0.0.0.0', port=PORT)
+    )
 
 if __name__ == "__main__":
     if not DISCORD_TOKEN or not API_KEY:
-        raise ValueError("Missing DISCORD_TOKEN or API_SECRET!")
-    loop = asyncio.get_event_loop()
-    loop.create_task(bot.start(DISCORD_TOKEN))
-    loop.run_until_complete(main())
+        raise ValueError("Missing DISCORD_TOKEN or API_SECRET environment variables!")
+    asyncio.run(main())
