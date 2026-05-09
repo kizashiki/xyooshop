@@ -18,8 +18,8 @@ PORT = int(os.getenv('PORT', 8080))
 SUPPORT_USER_ID = 592402229978333331
 VOUCH_CHANNEL_ID = int(os.getenv('VOUCH_CHANNEL_ID', '0'))
 
-WEBSITE_URL = os.getenv('WEBSITE_URL', 'http://localhost:8080')
-YOUR_IMAGE_URL = "https://cdn.discordapp.com/attachments/.../your-banner.gif"
+WEBSITE_URL = os.getenv('WEBSITE_URL', 'https://xyooshop.onrender.com/')
+YOUR_IMAGE_URL = "https://cdn.discordapp.com/attachments/1124170237089165325/1496726350101217402/standard.gif?ex=6a00af49&is=69ff5dc9&hm=3592503d7e5deeefd83dafb3b8caad324a2e119e1728b040fb9784e00d788718"
 
 EMBED_COLOR = discord.Color.from_rgb(186, 85, 211)
 GOLD_COLOR = discord.Color.gold()
