@@ -16,11 +16,13 @@ ORDER_CHANNEL_ID = int(os.getenv('ORDER_CHANNEL_ID', '0'))
 API_KEY = os.getenv('API_SECRET', 'change-me-in-production')
 PORT = int(os.getenv('PORT', 8080))
 SUPPORT_USER_ID = 592402229978333331
-# ✅ Use your Wispbyte server URL – change if domain works without port
-WEBSITE_URL = "http://87.106.155.7:12712"   # or "http://xyoo.shop:12712"
 VOUCH_CHANNEL_ID = int(os.getenv('VOUCH_CHANNEL_ID', '0'))
 
-YOUR_IMAGE_URL = "https://cdn.discordapp.com/attachments/.../your-banner.gif"  # replace with actual GIF
+# Render will provide the correct URL later
+WEBSITE_URL = os.getenv('WEBSITE_URL', 'http://localhost:8080')
+
+# Optional: banner image
+YOUR_IMAGE_URL = "https://cdn.discordapp.com/attachments/.../your-banner.gif"
 
 EMBED_COLOR = discord.Color.from_rgb(186, 85, 211)
 GOLD_COLOR = discord.Color.gold()
@@ -31,7 +33,7 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(m
 logger = logging.getLogger(__name__)
 
 app = Quart(__name__, static_folder='static', static_url_path='/static')
-app = cors(app, allow_origin="*")  # still safe for same-origin use
+app = cors(app, allow_origin="*")
 
 CONFIG_FILE = "bot_config.json"
 
@@ -71,9 +73,9 @@ class XyooBot(commands.Bot):
             await self.tree.sync()
             guild = discord.Object(id=GUILD_ID)
             await self.tree.sync(guild=guild)
-            logger.info("✅ Commands synced")
+            logger.info("Commands synced")
         else:
-            logger.info("Skipping command sync (SYNC_COMMANDS not set)")
+            logger.info("Skipping command sync")
 
 bot = XyooBot()
 
@@ -276,7 +278,6 @@ async def sync_commands(ctx):
     await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
     await ctx.send("✅ Commands synced!")
 
-# ================== HELPER: CUSTOMER LOOKUP ==================
 def find_member(guild, query):
     if not query: return None
     query = query.strip()
@@ -308,7 +309,6 @@ async def process_order(order_data):
         type=discord.ChannelType.private_thread,
         auto_archive_duration=1440
     )
-    # Add support user
     support = guild.get_member(SUPPORT_USER_ID)
     if support: await thread.add_user(support)
 
