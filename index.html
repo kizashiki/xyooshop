@@ -370,25 +370,14 @@
         const API_KEY = 'fzRFHIqB8u2WCU5mvGyPZK4tdj9Yw3gcrhLE7MSnVoeiplskTXaQO6bN0AxDJ1';
         const games = [
             { 
-                name: "Sailor Piece", image: "/static/sailor-piece.png",
+                name: "Grow A Garden 2", image: "/static/gag2.png",
                 products: [
-                    { id: 1, name: "15x Aura Chest", image: "/static/aura-crate.png", price: 1.99, category: "Crate", sale: 0 },
-                    { id: 2, name: "20x Cosmetic Chest", image: "/static/cosmetic-crate.png", price: 1.99, category: "Crate", sale: 0 },
-                    { id: 3, name: "Madara + F", image: "/static/premium-pass.png", price: 11.99, category: "Melee", sale: 0 },
-                    { id: 4, name: "Atomic v2 + F", image: "/static/battle-bundle.png", price: 17.99, category: "Sword", sale: 0 },
-                    { id: 5, name: "Ice Queen + F", image: "/static/currency.png", price: 2.99, category: "Sword", sale: 0 },
-                    { id: 6, name: "Gojo v2 + F", image: "/static/currency.png", price: 2.99, category: "Melee", sale: 0 },
-                    { id: 7, name: "Sukuna v2 + F", image: "/static/premium-pass.png", price: 11.99, category: "Melee", sale: 0 }
+                    { id: 1, name: "Dragon's Breath Seed", image: "/static/dbreath.png", price: 0.9, category: "Seeds", sale: 0 },
+                    { id: 2, name: "Ghost Pepper Seed", image: "/static/gpepper.png", price: 0.7, category: "Seeds", sale: 0 },
+                    { id: 3, name: "Rainbow Seed", image: "/static/vip-bundle.png", price: 0.5, category: "Seeds", sale: 0 },
+                    { id: 4, name: "Gold Seed", image: "/static/vip-bundle.png", price: 0.3, category: "Seeds", sale: 0 }
                 ]
             },
-            { 
-                name: "Grow A Garden", image: "/static/grow-a-garden.png",
-                products: [
-                    { id: 8, name: "Basic Access", image: "/static/basic-access.png", price: 4.99, category: "Gamepass", sale: 0 },
-                    { id: 9, name: "Pro Chest", image: "/static/pro-chest.png", price: 9.99, category: "Chest", sale: 0 },
-                    { id: 10, name: "VIP Bundle", image: "/static/vip-bundle.png", price: 15.99, category: "Bundle", sale: 0 }
-                ]
-            }
         ];
 
         window.cart = JSON.parse(localStorage.getItem('xyoo_cart')) || [];
