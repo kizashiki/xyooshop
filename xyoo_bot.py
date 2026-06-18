@@ -315,7 +315,11 @@ async def process_order(order_data):
     if customer_discord:
         member = find_member(guild, customer_discord)
         if member:
-            await channel.set_permissions(member, send_messages_in_threads=True, read_messages=True)
+            await channel.set_permissions(member,
+    send_messages_in_threads=True,
+    read_messages=True,
+    attach_files=True
+)
             await thread.add_user(member)
             customer_added = True
 
