@@ -90,7 +90,8 @@ def get_main_embed():
         color=EMBED_COLOR,
         timestamp=datetime.datetime.now()
     )
-    embed.add_field(name="📋 Available Options", value="🎥 **Video How To Order**\n💳 **Payment Methods**\n🛍️ **Order Here**", inline=False)
+    # UPDATED: Changed "Video How To Order" to "Instructions How To Order"
+    embed.add_field(name="📋 Available Options", value="📋 **Instructions How To Order**\n💳 **Payment Methods**\n🛍️ **Order Here**", inline=False)
     embed.add_field(name="⚡ Why Choose Xyoo?", value="✅ Fast & Reliable\n🔒 Secure Payments\n🛡️ 24/7 Support\n⭐ Premium Quality", inline=True)
     embed.add_field(name="🎁 Special Perks", value="🔥 Great Prices\n📝 Customer Reviews\n🚀 Quick Delivery\n💝 Loyalty Rewards", inline=True)
     embed.set_image(url=YOUR_IMAGE_URL)
@@ -98,14 +99,37 @@ def get_main_embed():
     return embed
 
 def get_tutorial_embed():
-    embed = discord.Embed(title="🎥 How To Order - Tutorial", description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n📚 **Follow our easy step-by-step guide!**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬", color=EMBED_COLOR)
-    embed.add_field(name="📹 Video Tutorial", value="[🎬 Click here to watch!](https://www.youtube.com/)\n⏱️ Duration: ~5 minutes", inline=False)
-    embed.add_field(name="📋 Quick Steps", value="```\n1️⃣ Browse products 🛍️\n2️⃣ Select item ⭐\n3️⃣ Choose payment 💳\n4️⃣ Complete transaction ✨\n5️⃣ Receive product! 🎉\n```", inline=False)
-    embed.set_footer(text="Xyoo Shop • Need help? Contact support!")
+    # UPDATED: Now shows text instructions instead of a video
+    embed = discord.Embed(
+        title="📋 How To Order - Instructions",
+        description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n📚 **Follow these simple steps!**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬",
+        color=EMBED_COLOR
+    )
+    embed.add_field(
+        name="📌 Step‑by‑Step Guide",
+        value=(
+            "```\n"
+            "1️⃣ Browse our website 🛍️\n"
+            "2️⃣ Choose your game & product\n"
+            "3️⃣ Add items to your cart\n"
+            "4️⃣ Proceed to checkout\n"
+            "5️⃣ Select your payment method (GCash or PayPal)\n"
+            "6️⃣ Enter your Discord username\n"
+            "7️⃣ Complete the payment & wait for delivery\n"
+            "```"
+        ),
+        inline=False
+    )
+    embed.add_field(
+        name="💡 Need Help?",
+        value=f"📞 Contact <@{SUPPORT_USER_ID}> anytime!\nWe're here to assist you.",
+        inline=False
+    )
+    embed.set_footer(text="Xyoo Shop • Happy shopping!")
     return embed
 
 def get_payment_methods_embed():
-    # *** UPDATED: Removed ROBUX GIFT CARD ***
+    # UPDATED: Removed ROBUX GIFT CARD
     embed = discord.Embed(title="💳 Payment Methods", description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n🌟 **Choose your preferred payment method!**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬", color=EMBED_COLOR)
     embed.add_field(name="💰 Available Methods", value="```💰 GCASH```\n```🌍 PAYPAL```", inline=False)
     embed.add_field(name="💡 Need Help?", value=f"📞 Contact <@{SUPPORT_USER_ID}>\n⏰ We're here 24/7!", inline=False)
@@ -146,7 +170,8 @@ def get_close_embed():
 class XyooSelect(discord.ui.Select):
     def __init__(self):
         options = [
-            discord.SelectOption(label="Video How To Order", value="tutorial", emoji="🎥"),
+            # UPDATED: Changed label and emoji
+            discord.SelectOption(label="Instructions How To Order", value="tutorial", emoji="📋"),
             discord.SelectOption(label="Payment Methods Available", value="payment_methods", emoji="💳"),
             discord.SelectOption(label="Order Here", value="order_here", emoji="🛍️"),
         ]
@@ -316,7 +341,6 @@ async def process_order(order_data):
     if customer_discord:
         member = find_member(guild, customer_discord)
         if member:
-            # Permissions are set on the channel (the parent text channel) where the thread is created
             await channel.set_permissions(member,
                 send_messages_in_threads=True,
                 read_messages=True,
@@ -347,8 +371,7 @@ async def gcash(): return await send_file('payment-gcash.html')
 @app.route('/payment-paypal.html')
 async def paypal(): return await send_file('payment-paypal.html')
 
-# REMOVED: @app.route('/payment-robux.html')
-# REMOVED: @app.route('/api/submit-code')
+# REMOVED: /payment-robux.html and /api/submit-code
 
 @app.route('/health')
 async def health(): return jsonify({"status": "ok"}), 200
