@@ -32,6 +32,8 @@
             justify-content: space-between;
             align-items: center;
             padding: 0 20px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .logo {
             font-size: 28px;
@@ -42,7 +44,7 @@
             background-clip: text;
             cursor: pointer;
         }
-        .nav-links { display: flex; gap: 30px; align-items: center; }
+        .nav-links { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
         .nav-links button {
             color: #b8b0c8; font-weight: 500; cursor: pointer;
             background: none; border: none; font-size: 15px; transition: color 0.3s;
@@ -61,6 +63,26 @@
             align-items: center; justify-content: center;
             font-size: 12px; font-weight: bold;
         }
+        /* Currency selector */
+        .currency-select {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c084fc;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23c084fc'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 16px;
+        }
+        .currency-select:hover { background: rgba(139, 92, 246, 0.4); }
+        .currency-select option { background: #1a1a2e; color: white; }
+
         .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
         .page-section { display: none; }
         .page-section.active { display: block; }
@@ -272,6 +294,7 @@
             .game-ad { width: 110px; }
             .game-ad-image { width: 70px; height: 70px; }
             .stats-grid { gap: 20px 30px; }
+            .nav-links { gap: 10px; }
         }
     </style>
 </head>
@@ -288,6 +311,11 @@
                     🛒
                     <span id="cartCount" class="cart-badge" style="display:none;">0</span>
                 </button>
+                <select id="currencySelect" class="currency-select" onchange="changeCurrency(this.value)">
+                    <option value="USD">💵 USD</option>
+                    <option value="PHP">₱ PHP</option>
+                    <option value="EUR">💶 EUR</option>
+                </select>
             </div>
         </div>
     </header>
@@ -362,7 +390,7 @@
 
     <footer>
         <p>✨ Powered by Xyoo | Roblox Games ✨</p>
-        <p>Payment Methods: GCash • PayPal • Robux Gift Card</p>
+        <p>Payment Methods: GCash • PayPal</p>
         <a href="https://discord.com/users/592402229978333331" style="color:#ec4899;">@xyoo0_.</a>
     </footer>
 
@@ -384,6 +412,44 @@
             },
         ];
 
+        // ---- Currency handling ----
+        const exchangeRates = { USD: 1, PHP: 56, EUR: 0.92 };
+        const currencySymbols = { USD: '$', PHP: '₱', EUR: '€' };
+        window.currentCurrency = localStorage.getItem('xyoo_currency') || 'USD';
+
+        function formatPrice(usdPrice) {
+            const rate = exchangeRates[window.currentCurrency] || 1;
+            const converted = usdPrice * rate;
+            const sym = currencySymbols[window.currentCurrency] || '$';
+            // Format with 2 decimal places, and appropriate symbol
+            if (window.currentCurrency === 'PHP') {
+                return sym + ' ' + converted.toFixed(2); // PHP uses space
+            } else {
+                return sym + converted.toFixed(2);
+            }
+        }
+
+        window.changeCurrency = function(currency) {
+            window.currentCurrency = currency;
+            localStorage.setItem('xyoo_currency', currency);
+            // Re-render visible page
+            if (document.getElementById('shopPage').classList.contains('active')) {
+                renderProducts();
+            }
+            if (document.getElementById('cartModal').classList.contains('active')) {
+                updateCartView();
+            }
+            if (document.getElementById('wishlistPage').classList.contains('active')) {
+                renderWishlist();
+            }
+        };
+
+        // Set the dropdown to the saved currency on load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('currencySelect').value = window.currentCurrency;
+        });
+
+        // ---- Rest of the app logic ----
         window.cart = JSON.parse(localStorage.getItem('xyoo_cart')) || [];
         window.wishlist = JSON.parse(localStorage.getItem('xyoo_wishlist')) || [];
         window.orderHistory = JSON.parse(localStorage.getItem('xyoo_orders')) || [];
@@ -410,7 +476,7 @@
             badge.style.display = total > 0 ? 'flex' : 'none';
         }
         function updateWishlistCount() { document.getElementById('wishlistCount').textContent = window.wishlist.length; }
-        function getTotalPrice() { return window.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2); }
+        function getTotalPrice() { return window.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0); } // in USD
 
         window.goHome = () => showPage('home');
         window.goToShop = () => showPage('shop');
@@ -454,7 +520,8 @@
                 view.innerHTML = '<p style="text-align:center; color:#8b7d9e;">Cart is empty 📭</p>';
                 return;
             }
-            const total = getTotalPrice();
+            const totalUSD = getTotalPrice(); // keep USD for calculation
+            const displayTotal = formatPrice(totalUSD);
             view.innerHTML = `
                 <div style="margin-bottom:16px;">
                     ${window.cart.map(item => `
@@ -462,7 +529,7 @@
                             <div style="flex:1;">
                                 <div style="color:#b8b0c8; font-size:11px;">${item.game}</div>
                                 <div style="color:white; font-weight:600;">${item.name}</div>
-                                <div style="color:#b8b0c8; font-size:12px;">$${item.price.toFixed(2)}</div>
+                                <div style="color:#b8b0c8; font-size:12px;">${formatPrice(item.price)}</div>
                             </div>
                             <div style="display:flex; gap:6px; align-items:center;">
                                 <input type="number" min="1" value="${item.quantity}" onchange="updateQuantity(${item.id}, parseInt(this.value))" style="width:45px; padding:4px; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.3); color:white; border-radius:4px; text-align:center;">
@@ -472,7 +539,7 @@
                     `).join('')}
                 </div>
                 <div class="cart-summary">
-                    <div style="display:flex; justify-content:space-between;"><span>Total:</span><span style="color:#f472b6; font-weight:bold;">$${total}</span></div>
+                    <div style="display:flex; justify-content:space-between;"><span>Total (${window.currentCurrency}):</span><span style="color:#f472b6; font-weight:bold;">${displayTotal}</span></div>
                 </div>
                 <button onclick="goToCheckout()" class="checkout-btn">💳 Proceed to Checkout</button>
             `;
@@ -481,11 +548,12 @@
         window.goToCheckout = function() {
             if (window.cart.length === 0) return;
             const view = document.getElementById('cartView');
-            const total = getTotalPrice();
+            const totalUSD = getTotalPrice();
+            const displayTotal = formatPrice(totalUSD);
             view.innerHTML = `
                 <h3 style="color:white; margin-bottom:16px;">Select Payment Method:</h3>
                 <div id="paymentOptions">
-                    ${['💰 GCASH', '🌍 PAYPAL', '🎮 ROBUX GIFT CARD'].map(m => `
+                    ${['💰 GCASH', '🌍 PAYPAL'].map(m => `
                         <label class="payment-option" style="cursor:pointer; display:flex; align-items:center;">
                             <input type="radio" name="payment" value="${m}" ${window.selectedPayment===m?'checked':''} style="margin-right:8px;">
                             <span>${m}</span>
@@ -497,7 +565,8 @@
                     <input type="text" id="discordUserInput" placeholder="e.g., username#0000" class="discord-input" oninput="validateCheckoutForm()">
                     <div id="discordError" style="color:#ef4444; font-size:12px; margin-top:4px; display:none;"></div>
                 </div>
-                <div class="cart-summary"><div style="display:flex; justify-content:space-between;"><span>Total:</span><span style="color:#f472b6;">$${total}</span></div></div>
+                <div class="cart-summary"><div style="display:flex; justify-content:space-between;"><span>Total (${window.currentCurrency}):</span><span style="color:#f472b6;">${displayTotal}</span></div></div>
+                <div style="font-size:0.9em; color:#b8b0c8; margin-bottom:12px;">* Payment will be processed in USD</div>
                 <button id="completeOrderBtn" onclick="completeOrder()" class="checkout-btn" disabled style="opacity:0.5; cursor:not-allowed;">✅ Complete Order</button>
                 <button onclick="updateCartView()" style="width:100%; margin-top:8px; background:rgba(139,92,246,0.2); color:#c084fc; padding:12px; border:none; border-radius:8px; cursor:pointer;">← Back</button>
             `;
@@ -545,7 +614,7 @@
 
             const discordUser = discordValue;
             const orderId = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-            const total = parseFloat(getTotalPrice());
+            const total = parseFloat(getTotalPrice().toFixed(2)); // always USD
 
             const order = {
                 id: orderId,
@@ -570,8 +639,6 @@
                 redirectUrl = `/payment-gcash.html?order=${orderId}&total=${total}`;
             } else if (chosenPayment === '🌍 PAYPAL') {
                 redirectUrl = `/payment-paypal.html?order=${orderId}&total=${total}`;
-            } else if (chosenPayment === '🎮 ROBUX GIFT CARD') {
-                redirectUrl = `/payment-robux.html?order=${orderId}`;
             }
             window.location.href = redirectUrl;
         };
@@ -614,7 +681,7 @@
                     <div class="product-info">
                         <div class="product-name">${p.name}</div>
                         <div class="product-footer">
-                            <span class="product-price">$${p.price.toFixed(2)}</span>
+                            <span class="product-price">${formatPrice(p.price)}</span>
                             <div class="product-actions">
                                 <button class="add-btn" data-action="add-to-cart">Add</button>
                                 <button class="wishlist-btn ${window.wishlist.includes(p.id)?'active':''}" data-action="toggle-wishlist">❤️</button>
@@ -657,7 +724,7 @@
             const items = games.flatMap(g => g.products).filter(p => window.wishlist.includes(p.id));
             container.innerHTML = items.map(p => `
                 <div class="wishlist-item">
-                    <div><div style="color:white;">${p.name}</div><div style="color:#b8b0c8;">$${p.price.toFixed(2)}</div></div>
+                    <div><div style="color:white;">${p.name}</div><div style="color:#b8b0c8;">${formatPrice(p.price)}</div></div>
                     <div style="display:flex;gap:8px;">
                         <button class="add-btn" data-product-id="${p.id}" data-action="add-to-cart-wishlist">Add</button>
                         <button data-product-id="${p.id}" data-action="remove-from-wishlist" style="background:none;border:none;color:#f472b6;cursor:pointer;">❌</button>
@@ -692,7 +759,7 @@
                     </div>
                     <div style="font-size:12px;color:#b8b0c8;margin-bottom:8px;">${o.date}</div>
                     <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(139,92,246,0.2);padding-top:8px;">
-                        <span>Total:</span><span style="color:#f472b6;font-weight:bold;">$${o.total.toFixed(2)}</span>
+                        <span>Total (USD):</span><span style="color:#f472b6;font-weight:bold;">$${o.total.toFixed(2)}</span>
                     </div>
                 </div>
             `).join('');

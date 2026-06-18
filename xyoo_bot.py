@@ -105,8 +105,9 @@ def get_tutorial_embed():
     return embed
 
 def get_payment_methods_embed():
+    # *** UPDATED: Removed ROBUX GIFT CARD ***
     embed = discord.Embed(title="💳 Payment Methods", description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n🌟 **Choose your preferred payment method!**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬", color=EMBED_COLOR)
-    embed.add_field(name="💰 Available Methods", value="```💰 GCASH```\n```🌍 PAYPAL```\n```🎮 ROBUX GIFT CARD```", inline=False)
+    embed.add_field(name="💰 Available Methods", value="```💰 GCASH```\n```🌍 PAYPAL```", inline=False)
     embed.add_field(name="💡 Need Help?", value=f"📞 Contact <@{SUPPORT_USER_ID}>\n⏰ We're here 24/7!", inline=False)
     embed.set_footer(text="Xyoo Shop • Secure & Reliable Payments")
     return embed
@@ -315,11 +316,12 @@ async def process_order(order_data):
     if customer_discord:
         member = find_member(guild, customer_discord)
         if member:
+            # Permissions are set on the channel (the parent text channel) where the thread is created
             await channel.set_permissions(member,
-    send_messages_in_threads=True,
-    read_messages=True,
-    attach_files=True
-)
+                send_messages_in_threads=True,
+                read_messages=True,
+                attach_files=True
+            )
             await thread.add_user(member)
             customer_added = True
 
@@ -338,12 +340,16 @@ async def process_order(order_data):
 # ================== QUART ROUTES ==================
 @app.route('/')
 async def index(): return await send_file('index.html')
+
 @app.route('/payment-gcash.html')
 async def gcash(): return await send_file('payment-gcash.html')
+
 @app.route('/payment-paypal.html')
 async def paypal(): return await send_file('payment-paypal.html')
-@app.route('/payment-robux.html')
-async def robux(): return await send_file('payment-robux.html')
+
+# REMOVED: @app.route('/payment-robux.html')
+# REMOVED: @app.route('/api/submit-code')
+
 @app.route('/health')
 async def health(): return jsonify({"status": "ok"}), 200
 
@@ -354,18 +360,6 @@ async def receive_order():
     data = await request.get_json()
     thread_id = await process_order(data)
     return jsonify({"status": "ok", "thread_id": str(thread_id) if thread_id else None}), 200
-
-@app.route('/api/submit-code', methods=['POST'])
-async def submit_code():
-    if request.headers.get('X-API-Key') != API_KEY:
-        return jsonify({"error": "Unauthorized"}), 401
-    data = await request.get_json()
-    thread = bot.get_guild(GUILD_ID).get_thread(int(data['threadId']))
-    if thread:
-        embed = discord.Embed(title="🎮 Robux Gift Card Code", description=f"Order: {data['orderId']}\nCode: `{data['code']}`", color=GREEN_COLOR)
-        await thread.send(embed=embed)
-        await thread.send(f"<@{SUPPORT_USER_ID}> Please redeem.")
-    return jsonify({"status": "ok"}), 200
 
 @bot.event
 async def on_ready():
