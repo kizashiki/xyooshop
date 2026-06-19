@@ -46,19 +46,22 @@
         <h1>🌍 PayPal Payment</h1>
         <div class="order-details">
             <p><strong>Order ID:</strong> <span id="displayOrderId">Loading...</span></p>
-            <p><strong>Total Amount:</strong> $<span id="displayTotal">0.00</span></p>
+            <p><strong>Total Amount:</strong> $<span id="displayTotal">0.00</span> <strong>USD</strong></p>
             <p><strong>Status:</strong> <span style="color: #eab308;">⏳ Awaiting Payment</span></p>
         </div>
         <div class="paypal-link">
-            <p style="margin-bottom:10px;">Send payment to:</p>
+            <p style="margin-bottom:10px;">📤 Send payment to:</p>
+            <!-- Base link WITHOUT amount so buyer can choose USD -->
             <a href="https://www.paypal.me/XyooShop2" target="_blank" id="paypalLink">paypal.me/XyooShop2</a>
         </div>
         <div class="instruction">
-            <p><strong>📋 Steps:</strong></p>
-            <p>1️⃣ Click the link above and send <strong>$<span id="totalAmount">0.00</span></strong>.</p>
-            <p>2️⃣ In the note, include your Order ID: <span class="highlight" id="orderIdNote"></span>.</p>
-            <p>3️⃣ After sending, click "Done Payment" to create your order thread.</p>
-            <p>4️⃣ Mention <strong>@xyoo0_.</strong> in the thread that you've paid via PayPal.</p>
+            <p><strong>📋 Steps (Friends & Family):</strong></p>
+            <p>1️⃣ Click the link above – it opens PayPal.</p>
+            <p>2️⃣ Enter the amount: <span class="highlight">$<span id="totalAmount">0.00</span> USD</span>.</p>
+            <p>3️⃣ <strong>Make sure the currency is set to USD</strong> (not PHP).</p>
+            <p>4️⃣ In the note, include your Order ID: <span class="highlight" id="orderIdNote"></span>.</p>
+            <p>5️⃣ After sending, come back here and click <strong>“Done Payment”</strong>.</p>
+            <p>6️⃣ Mention <strong>@xyoo0_.</strong> in the Discord thread.</p>
         </div>
         <div>
             <button class="btn" id="doneBtn" onclick="goToThread()">✅ Done Payment</button>
@@ -75,7 +78,8 @@
         document.getElementById('displayTotal').textContent = parseFloat(total).toFixed(2);
         document.getElementById('totalAmount').textContent = parseFloat(total).toFixed(2);
         document.getElementById('orderIdNote').textContent = orderId;
-        document.getElementById('paypalLink').href = `https://www.paypal.me/XyooShop2/${total}`;
+        // The link stays as the base URL – no amount appended
+        document.getElementById('paypalLink').href = 'https://www.paypal.me/XyooShop2';
 
         async function goToThread() {
             const btn = document.getElementById('doneBtn');
