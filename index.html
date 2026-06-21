@@ -64,13 +64,18 @@
             font-size: 12px; font-weight: bold;
         }
 
-        /* Welcome banner – only inside home page */
+        /* Welcome banner – inside home page */
         .welcome-banner {
             text-align: center; background: rgba(139, 92, 246, 0.1);
             border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px;
             padding: 16px; margin: 20px auto; max-width: 600px; display: none;
+            align-items: center; justify-content: center; gap: 12px;
         }
-        .welcome-banner.show { display: block; }
+        .welcome-banner.show { display: flex; }
+        .welcome-avatar {
+            width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+            border: 2px solid #ec4899;
+        }
 
         .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
         .page-section { display: none; }
@@ -214,7 +219,11 @@
         /* Account & Wishlist */
         .user-profile {
             background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3);
-            padding: 20px; border-radius: 12px; margin-bottom: 20px;
+            padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+        }
+        .profile-avatar {
+            width: 64px; height: 64px; border-radius: 50%; object-fit: cover;
+            border: 2px solid #ec4899;
         }
         .order-card, .wishlist-item {
             background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2);
@@ -311,8 +320,9 @@
             <button class="btn-primary" onclick="goToShop()">🎮 Start Shopping Now</button>
         </div>
 
-        <!-- Welcome banner (only shown when username is known) -->
-        <div id="welcomeBanner" class="welcome-banner" style="display:none;">
+        <!-- Welcome banner (shown when username is known) -->
+        <div id="welcomeBanner" class="welcome-banner">
+            <img id="welcomeAvatar" class="welcome-avatar" src="" alt="Avatar" style="display:none;">
             <span style="font-size:18px;">👋 Welcome back, <strong id="welcomeName"></strong>!</span>
         </div>
 
@@ -351,10 +361,13 @@
     <div id="accountPage" class="page-section">
         <div class="container">
             <h2 style="font-size:28px; margin:30px 0;">👤 My Account</h2>
-            <div class="user-profile">
-                <h3>User Profile</h3>
-                <div style="color:#b8b0c8; margin-bottom:8px;">Username: <span id="profileUsername" style="color:#f472b6;">Guest User</span></div>
-                <div style="color:#b8b0c8;">Total Orders: <span id="totalOrders" style="color:#f472b6;">0</span></div>
+            <div class="user-profile" id="profileCard">
+                <!-- Avatar and username dynamically inserted -->
+                <img id="profileAvatar" class="profile-avatar" src="" alt="Avatar" style="display:none;">
+                <div>
+                    <h3 style="margin-bottom:8px;">Username: <span id="profileUsername" style="color:#f472b6;">Guest User</span></h3>
+                    <div style="color:#b8b0c8;">Total Orders: <span id="totalOrders" style="color:#f472b6;">0</span></div>
+                </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0;">
                 <h3 style="margin:0;">📦 Order History</h3>
@@ -413,13 +426,12 @@
         // ---------- Global state ----------
         window.cart = JSON.parse(localStorage.getItem('xyoo_cart')) || [];
         window.wishlist = JSON.parse(localStorage.getItem('xyoo_wishlist')) || [];
-        // Order history is now server-side per user; local cache used for display
         window.orderHistory = [];
         window.selectedGame = games[0];
         window.selectedCategory = 'All';
         window.selectedPayment = '';
 
-        // ---------- User helpers ----------
+        // ---------- User helpers (with avatar) ----------
         function getStoredUsername() {
             return localStorage.getItem('xyoo_username') || 'Guest User';
         }
@@ -428,19 +440,25 @@
             return localStorage.getItem('xyoo_user_id');
         }
 
+        function getStoredAvatar() {
+            return localStorage.getItem('xyoo_avatar') || '';
+        }
+
         async function loadUserFromParam() {
             const params = new URLSearchParams(window.location.search);
             const userId = params.get('user');
             if (!userId) return;
             try {
                 const res = await fetch(`/api/user/${userId}`);
-                if (!res.ok) return;  // user not in server
+                if (!res.ok) return;
                 const user = await res.json();
                 localStorage.setItem('xyoo_username', user.display_name || user.username);
                 localStorage.setItem('xyoo_user_id', userId);
+                if (user.avatar_url) {
+                    localStorage.setItem('xyoo_avatar', user.avatar_url);
+                }
                 updateWelcomeBanner();
-                document.getElementById('profileUsername').textContent = getStoredUsername();
-                // Fetch their orders immediately
+                updateProfileAvatar();
                 await fetchUserOrders();
             } catch (e) {
                 console.error('Failed to load user:', e);
@@ -449,17 +467,36 @@
 
         function updateWelcomeBanner() {
             const name = getStoredUsername();
+            const avatarUrl = getStoredAvatar();
             if (name !== 'Guest User') {
                 document.getElementById('welcomeName').textContent = name;
-                document.getElementById('welcomeBanner').style.display = 'block';
+                document.getElementById('welcomeBanner').classList.add('show');
+                const avatarImg = document.getElementById('welcomeAvatar');
+                if (avatarUrl) {
+                    avatarImg.src = avatarUrl;
+                    avatarImg.style.display = 'inline-block';
+                } else {
+                    avatarImg.style.display = 'none';
+                }
             } else {
-                document.getElementById('welcomeBanner').style.display = 'none';
+                document.getElementById('welcomeBanner').classList.remove('show');
+            }
+        }
+
+        function updateProfileAvatar() {
+            const avatarUrl = getStoredAvatar();
+            const avatarImg = document.getElementById('profileAvatar');
+            if (avatarUrl) {
+                avatarImg.src = avatarUrl;
+                avatarImg.style.display = 'inline-block';
+            } else {
+                avatarImg.style.display = 'none';
             }
         }
 
         function updateProfileDisplay() {
             document.getElementById('profileUsername').textContent = getStoredUsername();
-            // Update welcome banner only if we're on the home page
+            updateProfileAvatar();
             if (document.getElementById('homePage').classList.contains('active')) {
                 updateWelcomeBanner();
             }
@@ -693,9 +730,9 @@
             const userId = getStoredUserId();
             if (userId) {
                 await saveOrderToServer(order, userId);
-                window.orderHistory.push(order); // update local cache
+                window.orderHistory.push(order);
             } else {
-                window.orderHistory.push(order); // fallback (local only, but won't persist across devices)
+                window.orderHistory.push(order);
             }
 
             renderOrderHistory();
@@ -839,7 +876,6 @@
         }
 
         window.clearOrderHistory = function() {
-            // Clears local cache only (server-side deletion would require another endpoint)
             window.orderHistory = [];
             renderOrderHistory();
             document.getElementById('totalOrders').textContent = '0';
@@ -865,7 +901,6 @@
             renderFeatured();
             updateCartCount();
             updateWishlistCount();
-            // Orders are already fetched if user was recognised; otherwise empty
             document.getElementById('totalOrders').textContent = window.orderHistory.length;
         }
         init();
