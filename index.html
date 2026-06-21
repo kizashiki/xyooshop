@@ -75,36 +75,29 @@
       z-index: 100;
     }
     .nav-left { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+
+    /* ---- RUNNING SHINE LOGO ---- */
     .logo {
       font-size: 24px;
       font-weight: 700;
-      background: linear-gradient(to right, #fff, #ff2a9d);
+      background: linear-gradient(90deg, #ff2a9d, #a855f7, #ff2a9d);
+      background-size: 200% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      animation: shine 2s linear infinite;
       cursor: pointer;
-      animation: logoGlow 3s infinite alternate;
+      text-shadow: none;
     }
-    @keyframes logoGlow {
-      0% { text-shadow: 0 0 15px #ff2a9d, 0 0 30px #8b5cf6; }
-      100% { text-shadow: 0 0 30px #ff2a9d, 0 0 60px #ff2a9d; }
+    @keyframes shine {
+      to { background-position: 200% center; }
     }
+
     .nav-links { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
     .nav-links a, .nav-links button {
       color: #bbb; text-decoration: none; font-weight: 500; font-size: 14px;
       background: none; border: none; cursor: pointer; transition: color 0.2s; padding: 6px 4px;
     }
     .nav-links a:hover, .nav-links button:hover { color: #ff2a9d; }
-    .live-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(255,42,157,0.15); border: 1px solid #ff2a9d;
-      padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
-      color: #ff2a9d; animation: livePulse 1.8s infinite;
-    }
-    @keyframes livePulse {
-      0%, 100% { box-shadow: 0 0 5px #ff2a9d; }
-      50% { box-shadow: 0 0 18px #ff2a9d; }
-    }
-    .live-dot { width: 8px; height: 8px; background: #ff2a9d; border-radius: 50%; animation: livePulse 1.8s infinite; }
     .search-bar {
       background: rgba(255,255,255,0.08); border: 1px solid #8b5cf6;
       border-radius: 20px; padding: 6px 14px; color: #fff; outline: none; width: 180px; transition: 0.2s;
@@ -151,12 +144,6 @@
       display: flex; align-items: center; gap: 12px; padding: 10px;
       border: 1px solid #8b5cf6; border-radius: 12px; cursor: pointer;
       transition: 0.2s; background: rgba(255,255,255,0.03);
-      animation: gameNameGlow 4s infinite alternate;
-    }
-    @keyframes gameNameGlow {
-      0% { box-shadow: 0 0 5px #ff2a9d; }
-      50% { box-shadow: 0 0 12px #a855f7; }
-      100% { box-shadow: 0 0 5px #ff2a9d; }
     }
     .game-card:hover {
       border-color: #ff2a9d;
@@ -169,7 +156,16 @@
       background: rgba(255,42,157,0.15);
     }
     .game-card img { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; }
-    .game-card span { font-weight: 600; }
+
+    /* ---- RUNNING SHINE FOR GAME NAMES ---- */
+    .game-card span {
+      font-weight: 600;
+      background: linear-gradient(90deg, #ff2a9d, #a855f7, #ff2a9d);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 2s linear infinite;
+    }
 
     .main-content { flex: 1; min-width: 0; }
 
@@ -348,7 +344,6 @@
         <button onclick="goHome()">🏠 Home</button>
         <button onclick="goToAccount()">👤 Account</button>
         <button onclick="goToWishlist()">❤️ Wishlist (<span id="wishlistCount">0</span>)</button>
-        <span class="live-badge"><span class="live-dot"></span> LIVE</span>
       </nav>
     </div>
     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
@@ -500,7 +495,6 @@
         localStorage.setItem('xyoo_username', user.display_name || user.username);
         localStorage.setItem('xyoo_user_id', userId);
         if (user.avatar_url) localStorage.setItem('xyoo_avatar', user.avatar_url);
-        // Show notification
         showWelcomeNotification(user.display_name || user.username, user.avatar_url);
         updateProfileAvatar();
         await fetchUserOrders();
@@ -518,10 +512,7 @@
         img.style.display = 'none';
       }
       notif.classList.add('show');
-      // Auto-hide after 5 seconds
-      setTimeout(() => {
-        notif.classList.remove('show');
-      }, 5000);
+      setTimeout(() => { notif.classList.remove('show'); }, 5000);
     }
 
     function updateProfileAvatar() {
@@ -531,7 +522,6 @@
       else img.style.display = 'none';
     }
 
-    // ---------- ORDERS ----------
     async function fetchUserOrders() {
       const userId = getStoredUserId();
       if (!userId) { window.orderHistory = []; renderOrderHistory(); return; }
@@ -554,7 +544,6 @@
       } catch (e) { console.error(e); }
     }
 
-    // ---------- FETCH PRODUCTS FROM BOT ----------
     async function fetchProducts() {
       try {
         const res = await fetch('/api/products');
@@ -805,6 +794,7 @@
       `).join('');
     }
 
+    // ---------- ORDER HISTORY ----------
     function renderOrderHistory() {
       const container = document.getElementById('orderHistory');
       if (!window.orderHistory.length) {
@@ -860,6 +850,7 @@
     async function init() {
       await loadUserFromParam();
       await fetchProducts();
+      // Show placeholder initially
       document.getElementById('placeholderMsg').style.display = 'block';
       document.getElementById('categoryTabs').style.display = 'none';
       document.getElementById('catalogTitle').style.display = 'none';
