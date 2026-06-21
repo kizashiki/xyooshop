@@ -57,13 +57,14 @@ def load_config():
         if os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE, "r") as f:
                 config = json.load(f)
-                # Ensure prices exist; if not, seed with defaults
                 if "prices" not in config:
                     config["prices"] = DEFAULT_PRODUCTS.copy()
+                if "user_orders" not in config:
+                    config["user_orders"] = {}
                 return config
     except Exception as e:
         logger.error(f"Failed to load config: {e}")
-    return {"prices": DEFAULT_PRODUCTS.copy()}
+    return {"prices": DEFAULT_PRODUCTS.copy(), "user_orders": {}}
 
 def save_config(config):
     try:
@@ -161,7 +162,6 @@ def get_payment_methods_embed():
     return embed
 
 def get_order_here_embed():
-    # Keep a generic version for the panel (static link)
     embed = discord.Embed(title="🛍️ Order Here", description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n🎉 **Ready to shop at Xyoo?**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬", color=EMBED_COLOR)
     embed.add_field(name="🌐 Visit Our Website", value=f"**[Click here to place your order]({WEBSITE_URL})**\n⚡ Fast Loading | 🔒 Secure Checkout", inline=False)
     embed.add_field(name="✨ What You'll Find", value="🛍️ Browse premium products\n🔐 Secure payment gateway\n💳 Multiple payment options", inline=False)
@@ -443,7 +443,6 @@ async def get_prices():
     prices = bot.config.get("prices", {})
     return jsonify(prices)
 
-# --- NEW: User lookup endpoint (only works if the user is in the server) ---
 @app.route('/api/user/<int:user_id>')
 async def get_user(user_id):
     guild = bot.get_guild(GUILD_ID)
@@ -458,6 +457,34 @@ async def get_user(user_id):
         "display_name": member.display_name,
         "avatar_url": str(member.display_avatar.url)
     })
+
+# ---------- User-specific order storage ----------
+@app.route('/api/user/orders/<int:user_id>', methods=['GET'])
+async def get_user_orders(user_id):
+    guild = bot.get_guild(GUILD_ID)
+    if not guild or not guild.get_member(user_id):
+        return jsonify({"error": "User not found"}), 404
+    orders = bot.config.get("user_orders", {}).get(str(user_id), [])
+    return jsonify(orders)
+
+@app.route('/api/user/orders', methods=['POST'])
+async def save_user_order():
+    if request.headers.get('X-API-Key') != API_KEY:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = await request.get_json()
+    user_id = data.get('user_id')
+    if not user_id:
+        return jsonify({"error": "user_id required"}), 400
+    guild = bot.get_guild(GUILD_ID)
+    if not guild or not guild.get_member(int(user_id)):
+        return jsonify({"error": "User not in server"}), 404
+    if "user_orders" not in bot.config:
+        bot.config["user_orders"] = {}
+    user_orders = bot.config["user_orders"].setdefault(str(user_id), [])
+    order_copy = {k: v for k, v in data.items() if k != 'user_id'}
+    user_orders.append(order_copy)
+    save_config(bot.config)
+    return jsonify({"status": "ok"}), 201
 
 @app.route('/api/order', methods=['POST'])
 async def receive_order():

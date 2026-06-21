@@ -64,7 +64,7 @@
             font-size: 12px; font-weight: bold;
         }
 
-        /* Welcome banner */
+        /* Welcome banner – only inside home page */
         .welcome-banner {
             text-align: center; background: rgba(139, 92, 246, 0.1);
             border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px;
@@ -304,17 +304,18 @@
         </div>
     </header>
 
-    <!-- Welcome banner (shown if username is known) -->
-    <div id="welcomeBanner" class="welcome-banner">
-        <span style="font-size:18px;">👋 Welcome back, <strong id="welcomeName"></strong>!</span>
-    </div>
-
     <div id="homePage" class="page-section active">
         <div class="hero-section">
             <h1>🤖 Welcome to Xyoo Shop</h1>
             <p>Upgrade your Roblox experience with affordable products.</p>
             <button class="btn-primary" onclick="goToShop()">🎮 Start Shopping Now</button>
         </div>
+
+        <!-- Welcome banner (only shown when username is known) -->
+        <div id="welcomeBanner" class="welcome-banner" style="display:none;">
+            <span style="font-size:18px;">👋 Welcome back, <strong id="welcomeName"></strong>!</span>
+        </div>
+
         <div class="container featured-section">
             <h2>⭐ Featured Games</h2>
             <div class="games-ads-grid" id="featuredGrid"></div>
@@ -412,7 +413,8 @@
         // ---------- Global state ----------
         window.cart = JSON.parse(localStorage.getItem('xyoo_cart')) || [];
         window.wishlist = JSON.parse(localStorage.getItem('xyoo_wishlist')) || [];
-        window.orderHistory = JSON.parse(localStorage.getItem('xyoo_orders')) || [];
+        // Order history is now server-side per user; local cache used for display
+        window.orderHistory = [];
         window.selectedGame = games[0];
         window.selectedCategory = 'All';
         window.selectedPayment = '';
@@ -420,6 +422,10 @@
         // ---------- User helpers ----------
         function getStoredUsername() {
             return localStorage.getItem('xyoo_username') || 'Guest User';
+        }
+
+        function getStoredUserId() {
+            return localStorage.getItem('xyoo_user_id');
         }
 
         async function loadUserFromParam() {
@@ -431,22 +437,66 @@
                 if (!res.ok) return;  // user not in server
                 const user = await res.json();
                 localStorage.setItem('xyoo_username', user.display_name || user.username);
-                // Show welcome banner
-                document.getElementById('welcomeName').textContent = user.display_name || user.username;
-                document.getElementById('welcomeBanner').classList.add('show');
-                // Update profile on Account page if visible
+                localStorage.setItem('xyoo_user_id', userId);
+                updateWelcomeBanner();
                 document.getElementById('profileUsername').textContent = getStoredUsername();
+                // Fetch their orders immediately
+                await fetchUserOrders();
             } catch (e) {
                 console.error('Failed to load user:', e);
             }
         }
 
+        function updateWelcomeBanner() {
+            const name = getStoredUsername();
+            if (name !== 'Guest User') {
+                document.getElementById('welcomeName').textContent = name;
+                document.getElementById('welcomeBanner').style.display = 'block';
+            } else {
+                document.getElementById('welcomeBanner').style.display = 'none';
+            }
+        }
+
         function updateProfileDisplay() {
             document.getElementById('profileUsername').textContent = getStoredUsername();
-            // Also update welcome banner if name exists
-            if (getStoredUsername() !== 'Guest User') {
-                document.getElementById('welcomeName').textContent = getStoredUsername();
-                document.getElementById('welcomeBanner').classList.add('show');
+            // Update welcome banner only if we're on the home page
+            if (document.getElementById('homePage').classList.contains('active')) {
+                updateWelcomeBanner();
+            }
+        }
+
+        // ---------- Server-side order management ----------
+        async function fetchUserOrders() {
+            const userId = getStoredUserId();
+            if (!userId) {
+                window.orderHistory = [];
+                renderOrderHistory();
+                return;
+            }
+            try {
+                const res = await fetch(`/api/user/orders/${userId}`);
+                if (!res.ok) return;
+                window.orderHistory = await res.json();
+                renderOrderHistory();
+                document.getElementById('totalOrders').textContent = window.orderHistory.length;
+            } catch (e) {
+                console.error('Failed to fetch orders:', e);
+            }
+        }
+
+        async function saveOrderToServer(order, userId) {
+            try {
+                const res = await fetch('/api/user/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': API_KEY
+                    },
+                    body: JSON.stringify({ ...order, user_id: userId })
+                });
+                if (!res.ok) throw new Error('Failed to save order');
+            } catch (e) {
+                console.error(e);
             }
         }
 
@@ -461,7 +511,6 @@
 
         function saveCart() { localStorage.setItem('xyoo_cart', JSON.stringify(window.cart)); updateCartCount(); }
         function saveWishlist() { localStorage.setItem('xyoo_wishlist', JSON.stringify(window.wishlist)); updateWishlistCount(); }
-        function saveOrders() { localStorage.setItem('xyoo_orders', JSON.stringify(window.orderHistory)); document.getElementById('totalOrders').textContent = window.orderHistory.length; }
 
         function updateCartCount() {
             const total = window.cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -474,7 +523,7 @@
 
         window.goHome = () => showPage('home');
         window.goToShop = () => { showPage('shop'); };
-        window.goToAccount = () => { showPage('account'); renderOrderHistory(); };
+        window.goToAccount = () => { showPage('account'); fetchUserOrders(); };
         window.goToWishlist = () => { showPage('wishlist'); renderWishlist(); };
 
         function showPage(page) {
@@ -639,8 +688,18 @@
                 discordUser,
                 status: 'Pending Payment'
             };
-            window.orderHistory.push(order);
-            saveOrders();
+
+            // Save order to server for this user
+            const userId = getStoredUserId();
+            if (userId) {
+                await saveOrderToServer(order, userId);
+                window.orderHistory.push(order); // update local cache
+            } else {
+                window.orderHistory.push(order); // fallback (local only, but won't persist across devices)
+            }
+
+            renderOrderHistory();
+            document.getElementById('totalOrders').textContent = window.orderHistory.length;
 
             const chosenPayment = window.selectedPayment;
             window.cart = [];
@@ -780,12 +839,10 @@
         }
 
         window.clearOrderHistory = function() {
-            if (confirm('Clear all order history?')) {
-                window.orderHistory = [];
-                saveOrders();
-                renderOrderHistory();
-                document.getElementById('totalOrders').textContent = '0';
-            }
+            // Clears local cache only (server-side deletion would require another endpoint)
+            window.orderHistory = [];
+            renderOrderHistory();
+            document.getElementById('totalOrders').textContent = '0';
         };
 
         function renderFeatured() {
@@ -799,8 +856,8 @@
 
         // ---------- Startup ----------
         async function init() {
-            await loadUserFromParam();       // check ?user=... from Discord link
-            updateProfileDisplay();          // show stored username
+            await loadUserFromParam();       // check ?user=... from Discord link, fetch user orders
+            updateProfileDisplay();
             await fetchPrices();
             renderGameTabs();
             renderCategoryTabs();
@@ -808,6 +865,7 @@
             renderFeatured();
             updateCartCount();
             updateWishlistCount();
+            // Orders are already fetched if user was recognised; otherwise empty
             document.getElementById('totalOrders').textContent = window.orderHistory.length;
         }
         init();
