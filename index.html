@@ -15,40 +15,70 @@
             min-height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             color: #fff;
-            cursor: none; /* hide default cursor for the effect */
         }
 
-        /* ---- CURSOR RING EFFECT ---- */
-        .cursor-ring {
+        /* ---- SUPER SAIYAN AURA CURSOR ---- */
+        .cursor-aura {
             position: fixed;
-            width: 30px;
-            height: 30px;
-            border: 2px solid #ec4899;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             pointer-events: none;
             z-index: 9999;
             transform: translate(-50%, -50%);
-            transition: width 0.2s, height 0.2s, border-color 0.2s;
-            box-shadow: 0 0 15px #ec4899, 0 0 30px #ec4899;
-            animation: pulse 1.5s infinite;
+            background: radial-gradient(circle, rgba(236,72,153,0.4) 0%, rgba(168,85,247,0.2) 40%, rgba(0,0,0,0) 70%);
+            box-shadow: 0 0 30px #ec4899, 0 0 60px #a855f7, 0 0 90px #ec4899;
+            animation: auraPulse 1.2s ease-in-out infinite alternate, auraSpin 4s linear infinite;
         }
-        @keyframes pulse {
+        @keyframes auraPulse {
             0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
-            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+        }
+        @keyframes auraSpin {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
         }
 
-        /* Keep default cursor for interactive elements (optional) */
-        a, button, input, .product-card, .game-ad, .wishlist-item, .order-card {
-            cursor: pointer;
+        /* ---- GLOWY UI ---- */
+        h1, h2, h3 {
+            text-shadow: 0 0 10px #c084fc, 0 0 20px #a855f7;
         }
-        a:hover ~ .cursor-ring, button:hover ~ .cursor-ring, .product-card:hover ~ .cursor-ring {
-            width: 50px;
-            height: 50px;
-            border-color: #f472b6;
+        .hero-section h1 {
+            text-shadow: 0 0 15px #f472b6, 0 0 30px #c084fc, 0 0 45px #a855f7;
+        }
+        .btn-primary, .add-btn, .checkout-btn, .clear-history-btn {
+            box-shadow: 0 0 10px rgba(236,72,153,0.5), 0 0 20px rgba(168,85,247,0.3);
+        }
+        .btn-primary:hover, .add-btn:hover, .checkout-btn:hover, .clear-history-btn:hover {
+            box-shadow: 0 0 20px #ec4899, 0 0 40px #a855f7;
+        }
+        .product-card, .game-ad, .feature-card, .order-card, .wishlist-item, .user-profile, .cart-item, .cart-summary, .payment-option {
+            box-shadow: 0 0 10px rgba(139,92,246,0.2), 0 0 20px rgba(139,92,246,0.1);
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        .product-card:hover, .game-ad:hover, .feature-card:hover {
+            box-shadow: 0 0 25px rgba(236,72,153,0.5), 0 0 50px rgba(168,85,247,0.3);
+        }
+        .game-tab, .category-tab {
+            box-shadow: 0 0 5px rgba(139,92,246,0.3);
+        }
+        .game-tab.active, .category-tab.active {
+            box-shadow: 0 0 15px #ec4899;
+        }
+        .discord-input:focus {
+            box-shadow: 0 0 10px #ec4899;
+        }
+        footer p {
+            text-shadow: 0 0 10px #c084fc;
+        }
+        .modal-content {
+            box-shadow: -5px 0 20px rgba(236,72,153,0.3);
+        }
+        .welcome-avatar, .profile-avatar {
+            box-shadow: 0 0 10px #ec4899;
         }
 
-        /* ---- REST OF YOUR CSS (unchanged) ---- */
+        /* ---- REST OF YOUR CSS ---- */
         header {
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(12px);
@@ -76,13 +106,14 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             cursor: pointer;
+            text-shadow: 0 0 15px #ec4899;
         }
         .nav-links { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
         .nav-links button {
             color: #b8b0c8; font-weight: 500; cursor: pointer;
-            background: none; border: none; font-size: 15px; transition: color 0.3s;
+            background: none; border: none; font-size: 15px; transition: color 0.3s, text-shadow 0.3s;
         }
-        .nav-links button:hover { color: #ec4899; }
+        .nav-links button:hover { color: #ec4899; text-shadow: 0 0 10px #ec4899; }
         .cart-btn {
             background: rgba(139, 92, 246, 0.2);
             border: 1px solid rgba(139, 92, 246, 0.4) !important;
@@ -95,6 +126,32 @@
             width: 24px; height: 24px; display: flex;
             align-items: center; justify-content: center;
             font-size: 12px; font-weight: bold;
+        }
+
+        /* Discord button with Xyoo logo */
+        .discord-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c084fc;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .discord-btn:hover {
+            background: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 10px #ec4899;
+        }
+        .discord-btn img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
         }
 
         .welcome-banner {
@@ -127,23 +184,6 @@
             transition: all 0.3s; display: inline-block;
         }
         .btn-primary:hover { transform: scale(1.05); }
-
-        .featured-section { margin: 20px auto 40px; text-align: center; max-width: 600px; }
-        .featured-section h2 { font-size: 32px; font-weight: 700; margin-bottom: 30px; width: 100%; text-align: center; }
-        .games-ads-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 20px; margin: 0 auto; }
-        .game-ad {
-            background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 10px; padding: 16px 10px; text-align: center; transition: all 0.3s;
-            cursor: pointer; display: flex; flex-direction: column; align-items: center; width: 130px;
-        }
-        .game-ad:hover { border-color: rgba(236, 72, 153, 0.4); transform: translateY(-4px); }
-        .game-ad-image {
-            width: 90px; height: 90px; margin-bottom: 10px; display: flex;
-            align-items: center; justify-content: center; background: rgba(0,0,0,0.2);
-            border-radius: 8px; overflow: hidden; font-size: 48px;
-        }
-        .game-ad-image img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
-        .game-ad-name { font-weight: 600; font-size: 15px; color: white; line-height: 1.3; }
 
         .stats-section {
             background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2);
@@ -193,8 +233,8 @@
             border-color: #ec4899; color: #f472b6;
         }
 
-        .game-section-title { font-size: 28px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; }
-        .game-section-title img { width: 40px; height: 40px; object-fit: contain; margin-right: 12px; }
+        .catalog-title { font-size: 28px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; }
+        .catalog-title img { width: 40px; height: 40px; object-fit: contain; margin-right: 12px; }
 
         .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin-bottom: 40px; }
         .product-card {
@@ -312,33 +352,32 @@
             .products-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
             .hero-section h1 { font-size: 32px; }
             .features-grid { grid-template-columns: repeat(2, 1fr); }
-            .games-ads-grid { gap: 12px; }
-            .game-ad { width: 110px; }
-            .game-ad-image { width: 70px; height: 70px; }
             .stats-grid { gap: 20px 30px; }
             .nav-links { gap: 10px; }
-            /* Keep cursor visible on touch devices */
-            body { cursor: auto; }
-            .cursor-ring { display: none; }
+            .cursor-aura { display: none; }
         }
     </style>
 </head>
 <body>
-    <!-- CURSOR RING ELEMENT -->
-    <div class="cursor-ring" id="cursorRing"></div>
+    <!-- AURA ELEMENT -->
+    <div class="cursor-aura" id="cursorAura"></div>
 
     <header>
         <div class="header-container">
             <div class="logo" onclick="goHome()">🤖 Xyoo Shop</div>
             <div class="nav-links">
                 <button onclick="goHome()">🏠 Home</button>
-                <button onclick="goToShop()">🛍️ Shop</button>
                 <button onclick="goToAccount()">👤 Account</button>
                 <button onclick="goToWishlist()">❤️ Wishlist (<span id="wishlistCount">0</span>)</button>
                 <button class="cart-btn" onclick="toggleCart()">
                     🛒
                     <span id="cartCount" class="cart-badge" style="display:none;">0</span>
                 </button>
+                <!-- Discord button with Xyoo logo -->
+                <a href="https://discord.com/users/592402229978333331" target="_blank" class="discord-btn">
+                    <img src="/static/favicon.png" alt="Xyoo">
+                    Discord
+                </a>
             </div>
         </div>
     </header>
@@ -347,7 +386,7 @@
         <div class="hero-section">
             <h1>🤖 Welcome to Xyoo Shop</h1>
             <p>Upgrade your Roblox experience with affordable products.</p>
-            <button class="btn-primary" onclick="goToShop()">🎮 Start Shopping Now</button>
+            <button class="btn-primary" onclick="document.getElementById('gameCatalog').scrollIntoView({behavior: 'smooth'})">🎮 Browse Catalog</button>
         </div>
 
         <div id="welcomeBanner" class="welcome-banner">
@@ -355,10 +394,14 @@
             <span style="font-size:18px;">👋 Welcome back, <strong id="welcomeName"></strong>!</span>
         </div>
 
-        <div class="container featured-section">
-            <h2>⭐ Featured Games</h2>
-            <div class="games-ads-grid" id="featuredGrid"></div>
+        <!-- GAME CATALOG SECTION -->
+        <div id="gameCatalog" class="container">
+            <div class="game-tabs" id="gameTabs"></div>
+            <div class="category-tabs" id="categoryTabs"></div>
+            <h2 class="catalog-title" id="catalogTitle">🎮 Game Catalog</h2>
+            <div class="products-grid" id="productsGrid"></div>
         </div>
+
         <div class="container stats-section">
             <div class="stats-grid">
                 <div><div class="stat-number" id="statGames">1</div><div class="stat-label">Games</div></div>
@@ -375,15 +418,6 @@
                 <div class="feature-card"><div class="feature-icon">🛡️</div><div class="feature-title">Secure & Safe</div><div class="feature-desc">Protected transactions with buyer protection</div></div>
                 <div class="feature-card"><div class="feature-icon">⭐</div><div class="feature-title">Quality Games</div><div class="feature-desc">Handpicked games and verified sellers</div></div>
             </div>
-        </div>
-    </div>
-
-    <div id="shopPage" class="page-section">
-        <div class="container">
-            <div class="game-tabs" id="gameTabs"></div>
-            <div class="category-tabs" id="categoryTabs"></div>
-            <h2 class="game-section-title" id="gameTitle">🎮 Select a Game</h2>
-            <div class="products-grid" id="productsGrid"></div>
         </div>
     </div>
 
@@ -422,12 +456,15 @@
     <footer>
         <p>✨ Powered by Xyoo | Roblox Games ✨</p>
         <p>Payment Methods: GCash • PayPal</p>
-        <a href="https://discord.com/users/592402229978333331" style="color:#ec4899;">@xyoo0_.</a>
+        <a href="https://discord.com/users/592402229978333331" class="discord-btn" style="display:inline-flex; margin-top:10px;">
+            <img src="/static/favicon.png" alt="Xyoo" style="width:20px; height:20px;">
+            @xyoo0_.
+        </a>
     </footer>
 
     <script>
-        // ---------- CURSOR EFFECT (outside your main script) ----------
-        const cursorRing = document.getElementById('cursorRing');
+        // ---------- SUPER SAIYAN CURSOR AURA ----------
+        const aura = document.getElementById('cursorAura');
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
         let currentX = mouseX;
@@ -438,17 +475,16 @@
             mouseY = e.clientY;
         });
 
-        function animateCursor() {
-            // Smooth follow
-            currentX += (mouseX - currentX) * 0.2;
-            currentY += (mouseY - currentY) * 0.2;
-            cursorRing.style.left = currentX + 'px';
-            cursorRing.style.top = currentY + 'px';
-            requestAnimationFrame(animateCursor);
+        function animateAura() {
+            currentX += (mouseX - currentX) * 0.15;
+            currentY += (mouseY - currentY) * 0.15;
+            aura.style.left = currentX + 'px';
+            aura.style.top = currentY + 'px';
+            requestAnimationFrame(animateAura);
         }
-        animateCursor();
+        animateAura();
 
-        // ---------- YOUR EXISTING WEBSITE CODE (unchanged) ----------
+        // ---------- MAIN WEBSITE CODE ----------
         const API_KEY = 'fzRFHIqB8u2WCU5mvGyPZK4tdj9Yw3gcrhLE7MSnVoeiplskTXaQO6bN0AxDJ1';
 
         const games = [
@@ -549,7 +585,6 @@
         function getTotalPrice() { return window.cart.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2); }
 
         window.goHome = () => showPage('home');
-        window.goToShop = () => { showPage('shop'); };
         window.goToAccount = () => { showPage('account'); fetchUserOrders(); };
         window.goToWishlist = () => { showPage('wishlist'); renderWishlist(); };
 
@@ -557,7 +592,9 @@
             document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
             document.getElementById(page + 'Page').classList.add('active');
             updateProfileDisplay();
-            if (page === 'shop') refreshShop();
+            if (page === 'home') {
+                refreshShop();  // reload catalog on home
+            }
         }
 
         async function refreshShop() {
@@ -744,7 +781,7 @@
         }
 
         function renderProducts() {
-            document.getElementById('gameTitle').innerHTML = `<img src="${window.selectedGame.image}" alt="${window.selectedGame.name}" style="width:40px;height:40px;object-fit:contain;margin-right:12px;"> ${window.selectedGame.name}`;
+            document.getElementById('catalogTitle').innerHTML = `<img src="${window.selectedGame.image}" alt="${window.selectedGame.name}" style="width:40px;height:40px;object-fit:contain;margin-right:12px;"> ${window.selectedGame.name} Catalog`;
             let filtered = window.selectedGame.products;
             if (window.selectedCategory !== 'All') filtered = filtered.filter(p => p.category === window.selectedCategory);
             const grid = document.getElementById('productsGrid');
@@ -849,20 +886,10 @@
             document.getElementById('totalOrders').textContent = '0';
         };
 
-        function renderFeatured() {
-            document.getElementById('featuredGrid').innerHTML = games.map(g => `
-                <div class="game-ad">
-                    <div class="game-ad-image"><img src="${g.image}" alt="${g.name}"></div>
-                    <div class="game-ad-name">${g.name}</div>
-                </div>
-            `).join('');
-        }
-
         async function init() {
             await loadUserFromParam();
             updateProfileDisplay();
             await refreshShop();
-            renderFeatured();
             updateCartCount();
             updateWishlistCount();
             document.getElementById('totalOrders').textContent = window.orderHistory.length;
