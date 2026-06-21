@@ -89,6 +89,7 @@ class XyooBot(commands.Bot):
         self.tree.add_command(request_vouch_command)
         self.tree.add_command(close_command)
         self.tree.add_command(setprice_command)
+        self.tree.add_command(removeitem_command)   # <-- NEW command
 
         if os.getenv('SYNC_COMMANDS', 'false').lower() == 'true':
             await self.tree.sync()
@@ -226,7 +227,6 @@ class XyooSelect(discord.ui.Select):
         elif selected == "payment_methods":
             await interaction.followup.send(embed=get_payment_methods_embed(), ephemeral=True)
         elif selected == "order_here":
-            # ---- PERSONALISED LINK ----
             personal_link = f"{WEBSITE_URL}?user={interaction.user.id}"
             embed = discord.Embed(
                 title="🛍️ Order Here",
@@ -345,6 +345,7 @@ async def close_command(interaction: discord.Interaction):
     await interaction.followup.send(embed=get_close_embed())
     asyncio.create_task(close_thread_after_delay(interaction.channel, 5))
 
+# ---------- PRICE MANAGEMENT COMMANDS ----------
 @app_commands.command(name="setprice", description="[Admin] Set the price of an item (USD)")
 @app_commands.default_permissions(administrator=True)
 @app_commands.describe(item="Item name (e.g. 'Unicorn')", price="New price in USD (e.g. 7.99)")
@@ -357,6 +358,19 @@ async def setprice_command(interaction: discord.Interaction, item: str, price: f
     bot.config["prices"][item] = round(price, 2)
     save_config(bot.config)
     await interaction.response.send_message(f"✅ Price for **{item}** set to **${price:.2f}** USD.", ephemeral=True)
+
+# NEW COMMAND: Remove an item from the price list
+@app_commands.command(name="removeitem", description="[Admin] Remove an item from the price list")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(item="Item name to remove (e.g. 'Unicorn')")
+async def removeitem_command(interaction: discord.Interaction, item: str):
+    prices = bot.config.get("prices", {})
+    if item not in prices:
+        await interaction.response.send_message(f"❌ Item **{item}** was not found in the price list.", ephemeral=True)
+        return
+    del prices[item]
+    save_config(bot.config)
+    await interaction.response.send_message(f"🗑️ Removed **{item}** from the price list.", ephemeral=True)
 
 @bot.command(name="sync")
 @commands.is_owner()
@@ -458,7 +472,6 @@ async def get_user(user_id):
         "avatar_url": str(member.display_avatar.url)
     })
 
-# ---------- User-specific order storage ----------
 @app.route('/api/user/orders/<int:user_id>', methods=['GET'])
 async def get_user_orders(user_id):
     guild = bot.get_guild(GUILD_ID)
