@@ -15,7 +15,40 @@
             min-height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             color: #fff;
+            cursor: none; /* hide default cursor for the effect */
         }
+
+        /* ---- CURSOR RING EFFECT ---- */
+        .cursor-ring {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ec4899;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, border-color 0.2s;
+            box-shadow: 0 0 15px #ec4899, 0 0 30px #ec4899;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+        }
+
+        /* Keep default cursor for interactive elements (optional) */
+        a, button, input, .product-card, .game-ad, .wishlist-item, .order-card {
+            cursor: pointer;
+        }
+        a:hover ~ .cursor-ring, button:hover ~ .cursor-ring, .product-card:hover ~ .cursor-ring {
+            width: 50px;
+            height: 50px;
+            border-color: #f472b6;
+        }
+
+        /* ---- REST OF YOUR CSS (unchanged) ---- */
         header {
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(12px);
@@ -101,7 +134,7 @@
         .game-ad {
             background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2);
             border-radius: 10px; padding: 16px 10px; text-align: center; transition: all 0.3s;
-            cursor: default; display: flex; flex-direction: column; align-items: center; width: 130px;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; width: 130px;
         }
         .game-ad:hover { border-color: rgba(236, 72, 153, 0.4); transform: translateY(-4px); }
         .game-ad-image {
@@ -284,10 +317,16 @@
             .game-ad-image { width: 70px; height: 70px; }
             .stats-grid { gap: 20px 30px; }
             .nav-links { gap: 10px; }
+            /* Keep cursor visible on touch devices */
+            body { cursor: auto; }
+            .cursor-ring { display: none; }
         }
     </style>
 </head>
 <body>
+    <!-- CURSOR RING ELEMENT -->
+    <div class="cursor-ring" id="cursorRing"></div>
+
     <header>
         <div class="header-container">
             <div class="logo" onclick="goHome()">🤖 Xyoo Shop</div>
@@ -387,6 +426,29 @@
     </footer>
 
     <script>
+        // ---------- CURSOR EFFECT (outside your main script) ----------
+        const cursorRing = document.getElementById('cursorRing');
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let currentX = mouseX;
+        let currentY = mouseY;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            // Smooth follow
+            currentX += (mouseX - currentX) * 0.2;
+            currentY += (mouseY - currentY) * 0.2;
+            cursorRing.style.left = currentX + 'px';
+            cursorRing.style.top = currentY + 'px';
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // ---------- YOUR EXISTING WEBSITE CODE (unchanged) ----------
         const API_KEY = 'fzRFHIqB8u2WCU5mvGyPZK4tdj9Yw3gcrhLE7MSnVoeiplskTXaQO6bN0AxDJ1';
 
         const games = [
