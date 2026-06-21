@@ -34,37 +34,64 @@ app = cors(app, allow_origin="*")
 
 CONFIG_FILE = "bot_config.json"
 
-# Default product prices – MUST match exact product names from the website
-DEFAULT_PRODUCTS = {
-    "5x Dragon's Breath Seed": 11.99,
-    "10x Dragon's Breath Seed": 18.99,
-    "5x Ghost Pepper Seed": 9.99,
-    "10x Ghost Pepper Seed": 16.99,
-    "50x Rainbow Seed": 4.99,
-    "100x Rainbow Seed": 8.99,
-    "50x Gold Seed": 2.99,
-    "100x Gold Seed": 4.99,
-    "Moon Blossom": 6.99,
-    "Dragon Fly": 4.99,
-    "Unicorn": 5.99,
-    "Bear": 3.99,
-    "Ice Serpent": 27.99,
-    "1M Sheckles": 1.99
-}
+# ---------- Default full product list ----------
+DEFAULT_PRODUCTS = [
+    {"id": 1,  "name": "5x Dragon's Breath Seed",  "image": "dbreath.png", "price": 11.99, "category": "Seed"},
+    {"id": 2,  "name": "10x Dragon's Breath Seed", "image": "dbreath.png", "price": 18.99, "category": "Seed"},
+    {"id": 3,  "name": "5x Ghost Pepper Seed",     "image": "gpepper.png", "price": 9.99,  "category": "Seed"},
+    {"id": 4,  "name": "10x Ghost Pepper Seed",    "image": "gpepper.png", "price": 16.99, "category": "Seed"},
+    {"id": 5,  "name": "50x Rainbow Seed",         "image": "rbseed.png",  "price": 4.99,  "category": "Seed"},
+    {"id": 6,  "name": "100x Rainbow Seed",        "image": "rbseed.png",  "price": 8.99,  "category": "Seed"},
+    {"id": 7,  "name": "50x Gold Seed",            "image": "gseed.png",   "price": 2.99,  "category": "Seed"},
+    {"id": 8,  "name": "100x Gold Seed",           "image": "gseed.png",   "price": 4.99,  "category": "Seed"},
+    {"id": 9,  "name": "Moon Blossom",             "image": "mb.png",      "price": 6.99,  "category": "Seed"},
+    {"id": 10, "name": "Dragon Fly",               "image": "df.png",      "price": 4.99,  "category": "Pet"},
+    {"id": 11, "name": "Unicorn",                  "image": "uni.png",     "price": 5.99,  "category": "Pet"},
+    {"id": 12, "name": "Bear",                     "image": "bear.png",    "price": 3.99,  "category": "Pet"},
+    {"id": 13, "name": "Ice Serpent",              "image": "is.png",      "price": 27.99, "category": "Pet"},
+    {"id": 14, "name": "1M Sheckles",              "image": "sheckles.png","price": 1.99,  "category": "Currency"},
+]
+
+def migrate_config(config):
+    """Convert old format (prices dict) to new format (products list)."""
+    if "products" not in config:
+        if "prices" in config:
+            default_map = {p["name"]: p for p in DEFAULT_PRODUCTS}
+            new_products = []
+            for name, price in config["prices"].items():
+                if name in default_map:
+                    entry = default_map[name].copy()
+                else:
+                    entry = {"id": 0, "name": name, "image": "unknown.png", "category": "Unknown"}
+                entry["price"] = price
+                new_products.append(entry)
+            for i, p in enumerate(new_products, start=1):
+                p["id"] = i
+            config["products"] = new_products
+            del config["prices"]
+        else:
+            config["products"] = DEFAULT_PRODUCTS.copy()
+    if "next_id" not in config:
+        if config["products"]:
+            max_id = max(p["id"] for p in config["products"])
+        else:
+            max_id = 0
+        config["next_id"] = max_id + 1
+    return config
 
 def load_config():
     try:
         if os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE, "r") as f:
                 config = json.load(f)
-                if "prices" not in config:
-                    config["prices"] = DEFAULT_PRODUCTS.copy()
+                config = migrate_config(config)
                 if "user_orders" not in config:
                     config["user_orders"] = {}
                 return config
     except Exception as e:
         logger.error(f"Failed to load config: {e}")
-    return {"prices": DEFAULT_PRODUCTS.copy(), "user_orders": {}}
+    base = {"products": DEFAULT_PRODUCTS.copy(), "user_orders": {}, "next_id": len(DEFAULT_PRODUCTS)+1}
+    return base
 
 def save_config(config):
     try:
@@ -89,7 +116,8 @@ class XyooBot(commands.Bot):
         self.tree.add_command(request_vouch_command)
         self.tree.add_command(close_command)
         self.tree.add_command(setprice_command)
-        self.tree.add_command(removeitem_command)   # <-- NEW command
+        self.tree.add_command(addproduct_command)
+        self.tree.add_command(removeitem_command)
 
         if os.getenv('SYNC_COMMANDS', 'false').lower() == 'true':
             await self.tree.sync()
@@ -115,11 +143,7 @@ def get_main_embed():
         color=EMBED_COLOR,
         timestamp=datetime.datetime.now()
     )
-    embed.add_field(
-        name="📋 Available Options",
-        value="📋 **Instructions How To Order**\n💳 **Payment Methods**\n🛍️ **Order Here**\n💰 **View Prices**",
-        inline=False
-    )
+    embed.add_field(name="📋 Available Options", value="📋 **Instructions How To Order**\n💳 **Payment Methods**\n🛍️ **Order Here**\n💰 **View Prices**", inline=False)
     embed.add_field(name="⚡ Why Choose Xyoo?", value="✅ Fast & Reliable\n🔒 Secure Payments\n🛡️ 24/7 Support\n⭐ Premium Quality", inline=True)
     embed.add_field(name="🎁 Special Perks", value="🔥 Great Prices\n📝 Customer Reviews\n🚀 Quick Delivery\n💝 Loyalty Rewards", inline=True)
     embed.set_image(url=YOUR_IMAGE_URL)
@@ -134,24 +158,10 @@ def get_tutorial_embed():
     )
     embed.add_field(
         name="📌 Step‑by‑Step Guide",
-        value=(
-            "```\n"
-            "1️⃣ Browse our website 🛍️\n"
-            "2️⃣ Choose your game & product\n"
-            "3️⃣ Add items to your cart\n"
-            "4️⃣ Proceed to checkout\n"
-            "5️⃣ Select your payment method (GCash or PayPal)\n"
-            "6️⃣ Enter your Discord username\n"
-            "7️⃣ Complete the payment & wait for delivery\n"
-            "```"
-        ),
+        value="```\n1️⃣ Browse our website 🛍️\n2️⃣ Choose your game & product\n3️⃣ Add items to your cart\n4️⃣ Proceed to checkout\n5️⃣ Select your payment method (GCash or PayPal)\n6️⃣ Enter your Discord username\n7️⃣ Complete the payment & wait for delivery\n```",
         inline=False
     )
-    embed.add_field(
-        name="💡 Need Help?",
-        value=f"📞 Contact <@{SUPPORT_USER_ID}> anytime!\nWe're here to assist you.",
-        inline=False
-    )
+    embed.add_field(name="💡 Need Help?", value=f"📞 Contact <@{SUPPORT_USER_ID}> anytime!\nWe're here to assist you.", inline=False)
     embed.set_footer(text="Xyoo Shop • Happy shopping!")
     return embed
 
@@ -170,19 +180,14 @@ def get_order_here_embed():
     return embed
 
 def get_prices_embed():
-    prices = bot.config.get("prices", {})
-    if not prices:
-        desc = "No prices configured yet."
+    products = bot.config.get("products", [])
+    if not products:
+        desc = "No products yet."
     else:
-        lines = [f"• **{item}**: ${price:.2f}" for item, price in prices.items()]
+        lines = [f"• **{p['name']}**: ${p['price']:.2f}" for p in products]
         desc = "\n".join(lines)
-    embed = discord.Embed(
-        title="💰 Xyoo Shop – Price List",
-        description=desc,
-        color=EMBED_COLOR,
-        timestamp=datetime.datetime.now()
-    )
-    embed.set_footer(text="Prices in USD • Use /setprice to update")
+    embed = discord.Embed(title="💰 Xyoo Shop – Price List", description=desc, color=EMBED_COLOR)
+    embed.set_footer(text="Prices in USD • Use /addproduct or /setprice")
     return embed
 
 def get_order_embed(order_data, customer_discord, customer_added, member):
@@ -345,32 +350,59 @@ async def close_command(interaction: discord.Interaction):
     await interaction.followup.send(embed=get_close_embed())
     asyncio.create_task(close_thread_after_delay(interaction.channel, 5))
 
-# ---------- PRICE MANAGEMENT COMMANDS ----------
-@app_commands.command(name="setprice", description="[Admin] Set the price of an item (USD)")
+# ---------- PRODUCT MANAGEMENT COMMANDS ----------
+@app_commands.command(name="setprice", description="[Admin] Change the price of an existing product")
 @app_commands.default_permissions(administrator=True)
-@app_commands.describe(item="Item name (e.g. 'Unicorn')", price="New price in USD (e.g. 7.99)")
+@app_commands.describe(item="Product name", price="New price in USD")
 async def setprice_command(interaction: discord.Interaction, item: str, price: float):
     if price < 0:
         await interaction.response.send_message("❌ Price cannot be negative.", ephemeral=True)
         return
-    if "prices" not in bot.config:
-        bot.config["prices"] = {}
-    bot.config["prices"][item] = round(price, 2)
-    save_config(bot.config)
-    await interaction.response.send_message(f"✅ Price for **{item}** set to **${price:.2f}** USD.", ephemeral=True)
+    products = bot.config.setdefault("products", [])
+    for p in products:
+        if p["name"] == item:
+            p["price"] = round(price, 2)
+            save_config(bot.config)
+            await interaction.response.send_message(f"✅ Price for **{item}** set to **${price:.2f}** USD.", ephemeral=True)
+            return
+    await interaction.response.send_message(f"❌ Item **{item}** not found. Use /addproduct first.", ephemeral=True)
 
-# NEW COMMAND: Remove an item from the price list
-@app_commands.command(name="removeitem", description="[Admin] Remove an item from the price list")
+@app_commands.command(name="addproduct", description="[Admin] Add a new product to the shop")
 @app_commands.default_permissions(administrator=True)
-@app_commands.describe(item="Item name to remove (e.g. 'Unicorn')")
-async def removeitem_command(interaction: discord.Interaction, item: str):
-    prices = bot.config.get("prices", {})
-    if item not in prices:
-        await interaction.response.send_message(f"❌ Item **{item}** was not found in the price list.", ephemeral=True)
+@app_commands.describe(name="Product name", price="Price in USD", image="Image filename (e.g. apple.png)", category="Category (e.g. Pet, Seed)")
+async def addproduct_command(interaction: discord.Interaction, name: str, price: float, image: str, category: str):
+    if price < 0:
+        await interaction.response.send_message("❌ Price cannot be negative.", ephemeral=True)
         return
-    del prices[item]
+    products = bot.config.setdefault("products", [])
+    if any(p["name"] == name for p in products):
+        await interaction.response.send_message(f"❌ Product **{name}** already exists. Use /setprice to update it.", ephemeral=True)
+        return
+    new_id = bot.config.get("next_id", 1)
+    new_product = {
+        "id": new_id,
+        "name": name,
+        "price": round(price, 2),
+        "image": image,
+        "category": category
+    }
+    products.append(new_product)
+    bot.config["next_id"] = new_id + 1
     save_config(bot.config)
-    await interaction.response.send_message(f"🗑️ Removed **{item}** from the price list.", ephemeral=True)
+    await interaction.response.send_message(f"✅ Added **{name}** (${price:.2f}) with ID {new_id}. Image: `{image}`", ephemeral=True)
+
+@app_commands.command(name="removeitem", description="[Admin] Remove a product from the shop")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(item="Product name to remove")
+async def removeitem_command(interaction: discord.Interaction, item: str):
+    products = bot.config.setdefault("products", [])
+    for i, p in enumerate(products):
+        if p["name"] == item:
+            del products[i]
+            save_config(bot.config)
+            await interaction.response.send_message(f"🗑️ Removed **{item}** from the shop.", ephemeral=True)
+            return
+    await interaction.response.send_message(f"❌ Product **{item}** not found.", ephemeral=True)
 
 @bot.command(name="sync")
 @commands.is_owner()
@@ -452,9 +484,16 @@ async def paypal(): return await send_file('payment-paypal.html')
 @app.route('/health')
 async def health(): return jsonify({"status": "ok"}), 200
 
+@app.route('/api/products')
+async def get_products():
+    """Return the full product list."""
+    products = bot.config.get("products", [])
+    return jsonify(products)
+
 @app.route('/api/prices')
-async def get_prices():
-    prices = bot.config.get("prices", {})
+async def get_prices_legacy():
+    products = bot.config.get("products", [])
+    prices = {p["name"]: p["price"] for p in products}
     return jsonify(prices)
 
 @app.route('/api/user/<int:user_id>')
