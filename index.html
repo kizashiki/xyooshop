@@ -141,18 +141,26 @@
     }
     .search-bar::placeholder { color: #aaa; }
     .search-bar:focus { border-color: #ff2a9d; box-shadow: 0 0 10px #ff2a9d; }
-    .sign-in-btn {
-      background: #ff2a9d;
-      color: #fff;
-      border: none;
-      padding: 8px 18px;
+
+    .discord-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(139,92,246,0.2);
+      border: 1px solid #8b5cf6;
+      color: #c084fc;
+      padding: 8px 14px;
       border-radius: 20px;
       font-weight: 600;
       cursor: pointer;
+      text-decoration: none;
       transition: 0.2s;
-      font-size: 14px;
     }
-    .sign-in-btn:hover { box-shadow: 0 0 12px #ff2a9d; }
+    .discord-btn:hover { border-color: #ff2a9d; box-shadow: 0 0 10px #ff2a9d; }
+    .discord-btn img {
+      width: 20px; height: 20px;
+      object-fit: contain;
+    }
 
     .cart-btn {
       position: relative;
@@ -177,33 +185,92 @@
       font-size: 11px;
     }
 
-    /* ---- BANNER ---- */
-    .banner {
-      background: linear-gradient(135deg, rgba(255,42,157,0.15), rgba(139,92,246,0.1));
-      border: 1px solid rgba(139,92,246,0.3);
-      border-radius: 16px;
-      padding: 24px;
-      margin: 24px auto;
-      max-width: 1200px;
+    /* ---- LAYOUT (Sidebar + Main) ---- */
+    .main-layout {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      gap: 20px;
+      max-width: 1400px;
+      margin: 20px auto;
+      padding: 0 20px;
     }
-    .banner h2 {
-      font-size: 32px;
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: rgba(255,42,157,0.05);
+      border: 1px solid #8b5cf6;
+      border-radius: 16px;
+      padding: 20px;
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+    }
+    .sidebar h3 {
+      margin-bottom: 15px;
       background: linear-gradient(to right, #fff, #ff2a9d);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .messages-icon {
-      background: rgba(255,42,157,0.2);
+    .game-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .game-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border: 1px solid #8b5cf6;
       border-radius: 12px;
-      padding: 10px 16px;
       cursor: pointer;
       transition: 0.2s;
+      background: rgba(255,255,255,0.03);
+    }
+    .game-card:hover {
+      border-color: #ff2a9d;
+      box-shadow: 0 0 12px #ff2a9d;
+      transform: translateX(4px);
+    }
+    .game-card.active {
+      border-color: #ff2a9d;
+      box-shadow: 0 0 15px #ff2a9d;
+      background: rgba(255,42,157,0.15);
+    }
+    .game-card img {
+      width: 40px; height: 40px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .game-card span {
+      font-weight: 600;
+    }
+
+    .main-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* ---- HERO RECTANGLE ---- */
+    .hero-rect {
+      background: linear-gradient(135deg, rgba(255,42,157,0.2), rgba(139,92,246,0.15));
+      border: 1px solid #8b5cf6;
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 0 20px rgba(139,92,246,0.3);
+    }
+    .hero-rect h1 {
+      font-size: 36px;
+      background: linear-gradient(to right, #fff, #ff2a9d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .hero-rect p {
+      color: #bbb;
       font-size: 18px;
     }
-    .messages-icon:hover { background: rgba(255,42,157,0.4); }
 
     /* ---- TRUST BADGES ---- */
     .trust-badges {
@@ -211,8 +278,7 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 12px;
-      margin: 10px auto 20px;
-      max-width: 1200px;
+      margin: 10px 0 20px;
     }
     .badge {
       background: rgba(255,42,157,0.12);
@@ -232,7 +298,7 @@
       border: 1px solid #8b5cf6;
       border-radius: 12px;
       padding: 16px;
-      margin: 20px auto;
+      margin: 0 auto 20px;
       max-width: 600px;
       display: none;
       align-items: center;
@@ -247,21 +313,16 @@
       border: 2px solid #ff2a9d;
     }
 
-    /* ---- CATALOG ---- */
-    .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
-    .page-section { display: none; }
-    .page-section.active { display: block; }
-
+    /* ---- CATEGORY TABS & PRODUCT GRID ---- */
     .category-tabs {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin: 20px 0;
+      margin-bottom: 20px;
     }
     .catalog-title {
-      font-size: 28px;
-      font-weight: 700;
-      margin: 20px 0;
+      font-size: 24px;
+      margin-bottom: 20px;
       background: linear-gradient(to right, #fff, #ff2a9d);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -271,8 +332,8 @@
     }
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
       margin-bottom: 40px;
     }
     .product-card {
@@ -326,6 +387,9 @@
     }
 
     /* ---- ACCOUNT & WISHLIST PAGES ---- */
+    .page-section { display: none; }
+    .page-section.active { display: block; }
+
     .user-profile {
       background: rgba(255,255,255,0.05);
       border: 1px solid #8b5cf6;
@@ -407,6 +471,8 @@
     }
 
     @media (max-width: 768px) {
+      .main-layout { flex-direction: column; }
+      .sidebar { width: 100%; position: static; }
       .navbar { flex-direction: column; }
       .search-bar { width: 100%; }
       .modal-content { width: 100%; }
@@ -430,46 +496,60 @@
     </div>
     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
       <input type="text" class="search-bar" placeholder="Search items..." oninput="filterProducts(this.value)">
-      <a href="https://discord.com/users/592402229978333331" target="_blank" class="sign-in-btn">Sign in</a>
+      <a href="https://discord.com/users/592402229978333331" target="_blank" class="discord-btn">
+        <img src="/static/favicon.png" alt="Xyoo"> Discord
+      </a>
       <button class="cart-btn" onclick="toggleCart()">
         🛒 Cart <span class="cart-badge" id="cartCount" style="display:none;">0</span>
       </button>
     </div>
   </header>
 
-  <!-- HOME PAGE -->
+  <!-- HOME PAGE (with sidebar + main) -->
   <div id="homePage" class="page-section active">
-    <div class="banner container">
-      <h2>🎮 XYOO CATALOG</h2>
-      <a href="https://discord.gg/xyoo" target="_blank" class="messages-icon">💬</a>
-    </div>
+    <div class="main-layout">
+      <!-- LEFT SIDEBAR: Game Catalog -->
+      <aside class="sidebar">
+        <h3>🎮 Game Catalog</h3>
+        <div class="game-list" id="gameList">
+          <!-- Dynamically filled by JavaScript -->
+        </div>
+      </aside>
 
-    <!-- WELCOME BANNER -->
-    <div id="welcomeBanner" class="welcome-banner">
-      <img id="welcomeAvatar" class="welcome-avatar" src="" alt="Avatar" style="display:none;">
-      <span>👋 Welcome back, <strong id="welcomeName"></strong>!</span>
-    </div>
+      <!-- MAIN CONTENT -->
+      <div class="main-content">
+        <!-- HERO RECTANGLE -->
+        <div class="hero-rect">
+          <h1>Xyoo - Roblox Shop</h1>
+          <p>Roblox items, currency & bundles — Trusted · Secure · Fast delivery</p>
+        </div>
 
-    <!-- TRUST BADGES -->
-    <div class="trust-badges">
-      <span class="badge">100% SECURE</span>
-      <span class="badge">FAST DELIVERY</span>
-      <span class="badge">MANUAL</span>
-      <span class="badge">BEST PRICES</span>
-      <span class="badge">24/7 SUPPORT</span>
-    </div>
+        <!-- WELCOME BANNER -->
+        <div id="welcomeBanner" class="welcome-banner">
+          <img id="welcomeAvatar" class="welcome-avatar" src="" alt="Avatar" style="display:none;">
+          <span>👋 Welcome back, <strong id="welcomeName"></strong>!</span>
+        </div>
 
-    <!-- CATALOG -->
-    <div class="container">
-      <div class="category-tabs" id="categoryTabs"></div>
-      <h2 class="catalog-title" id="catalogTitle">🛍️ All Products</h2>
-      <div class="products-grid" id="productsGrid"></div>
+        <!-- TRUST BADGES -->
+        <div class="trust-badges">
+          <span class="badge">100% SECURE</span>
+          <span class="badge">FAST DELIVERY</span>
+          <span class="badge">MANUAL</span>
+          <span class="badge">BEST PRICES</span>
+          <span class="badge">24/7 SUPPORT</span>
+        </div>
+
+        <!-- CATEGORY TABS & PRODUCTS -->
+        <div class="category-tabs" id="categoryTabs"></div>
+        <h2 class="catalog-title" id="catalogTitle">🛍️ All Products</h2>
+        <div class="products-grid" id="productsGrid"></div>
+      </div>
     </div>
   </div>
 
   <!-- ACCOUNT PAGE -->
   <div id="accountPage" class="page-section">
-    <div class="container">
+    <div class="container" style="max-width:1200px; margin:20px auto; padding:0 20px;">
       <h2>👤 My Account</h2>
       <div class="user-profile" id="profileCard">
         <img id="profileAvatar" class="profile-avatar" src="" alt="Avatar" style="display:none;">
@@ -488,7 +568,7 @@
 
   <!-- WISHLIST PAGE -->
   <div id="wishlistPage" class="page-section">
-    <div class="container">
+    <div class="container" style="max-width:1200px; margin:20px auto; padding:0 20px;">
       <h2>❤️ My Wishlist</h2>
       <div id="wishlistItems"></div>
     </div>
@@ -533,11 +613,15 @@
     let allProducts = [];
     let selectedCategory = 'All';
 
-    // ---------- STATE (cart, wishlist, orders, user) ----------
     window.cart = JSON.parse(localStorage.getItem('xyoo_cart')) || [];
     window.wishlist = JSON.parse(localStorage.getItem('xyoo_wishlist')) || [];
     window.orderHistory = [];
-    window.selectedGame = { name: "Grow A Garden 2", image: "/static/gag2.png", products: [] };
+    // Games list – at least one game (Grow a Garden 2). More can be added from bot dynamically later if needed.
+    const games = [
+      { name: "Grow A Garden 2", image: "/static/gag2.png", products: [] }
+    ];
+    window.selectedGame = games[0];
+
     window.selectedPayment = '';
 
     function getStoredUsername() { return localStorage.getItem('xyoo_username') || 'Guest User'; }
@@ -617,14 +701,39 @@
         const res = await fetch('/api/products');
         if (!res.ok) return;
         allProducts = await res.json();
-        window.selectedGame.products = allProducts;
+        // Assign all products to the first game for now (can be expanded later)
+        if (games.length > 0) games[0].products = allProducts;
+        window.selectedGame = games[0];
+        renderGameList();   // update sidebar game list
         renderCategoryTabs();
         renderProducts(allProducts);
       } catch (e) { console.error(e); }
     }
 
+    // ---------- RENDER SIDEBAR GAME LIST ----------
+    function renderGameList() {
+      const listEl = document.getElementById('gameList');
+      listEl.innerHTML = games.map(g => `
+        <div class="game-card ${g.name === window.selectedGame.name ? 'active' : ''}" onclick="selectGame('${g.name.replace(/'/g, "\\'")}')">
+          <img src="${g.image}" alt="${g.name}">
+          <span>${g.name}</span>
+        </div>
+      `).join('');
+    }
+
+    window.selectGame = function(gameName) {
+      const game = games.find(g => g.name === gameName);
+      if (!game) return;
+      window.selectedGame = game;
+      selectedCategory = 'All';
+      renderGameList();
+      renderCategoryTabs();
+      renderProducts(game.products);
+    };
+
+    // ---------- CATEGORY TABS & PRODUCT RENDERING ----------
     function renderCategoryTabs() {
-      const cats = ['All', ...new Set(allProducts.map(p => p.category))];
+      const cats = ['All', ...new Set(window.selectedGame.products.map(p => p.category))];
       document.getElementById('categoryTabs').innerHTML = cats.map(c =>
         `<button class="btn ${c === selectedCategory ? 'btn-primary' : ''}" onclick="selectCategory('${c}')">${c}</button>`
       ).join(' ');
@@ -652,13 +761,13 @@
     window.selectCategory = function(cat) {
       selectedCategory = cat;
       renderCategoryTabs();
-      const filtered = cat === 'All' ? allProducts : allProducts.filter(p => p.category === cat);
+      const filtered = cat === 'All' ? window.selectedGame.products : window.selectedGame.products.filter(p => p.category === cat);
       renderProducts(filtered);
     };
 
     window.filterProducts = function(query) {
       const q = query.toLowerCase();
-      const filtered = allProducts.filter(p => p.name.toLowerCase().includes(q));
+      const filtered = window.selectedGame.products.filter(p => p.name.toLowerCase().includes(q));
       renderProducts(filtered);
     };
 
@@ -813,7 +922,8 @@
       else window.wishlist.push(id);
       localStorage.setItem('xyoo_wishlist', JSON.stringify(window.wishlist));
       updateWishlistCount();
-      renderProducts(allProducts); // refresh current view
+      // re-render current products to reflect wishlist state
+      renderProducts(window.selectedGame.products);
     };
 
     function updateWishlistCount() { document.getElementById('wishlistCount').textContent = window.wishlist.length; }
@@ -826,7 +936,7 @@
       }
       const items = allProducts.filter(p => window.wishlist.includes(p.id));
       container.innerHTML = items.map(p => `
-        <div class="wishlist-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid #8b5cf6; border-radius:12px; margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid #8b5cf6; border-radius:12px; margin-bottom:8px;">
           <span>${p.name} - $${p.price.toFixed(2)}</span>
           <div>
             <button class="btn btn-primary" onclick="addToCart(${p.id})">Add</button>
@@ -866,7 +976,10 @@
       document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
       document.getElementById(page + 'Page').classList.add('active');
       updateProfileDisplay();
-      if (page === 'home') fetchProducts();
+      if (page === 'home') {
+        // No need to reload products unless necessary, but refresh to be safe
+        fetchProducts();
+      }
     }
 
     window.toggleCart = function() {
