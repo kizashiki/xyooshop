@@ -63,7 +63,6 @@ def load_config():
                 return config
     except Exception as e:
         logger.error(f"Failed to load config: {e}")
-    # Fallback
     return {"prices": DEFAULT_PRODUCTS.copy()}
 
 def save_config(config):
@@ -162,6 +161,7 @@ def get_payment_methods_embed():
     return embed
 
 def get_order_here_embed():
+    # Keep a generic version for the panel (static link)
     embed = discord.Embed(title="🛍️ Order Here", description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n🎉 **Ready to shop at Xyoo?**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬", color=EMBED_COLOR)
     embed.add_field(name="🌐 Visit Our Website", value=f"**[Click here to place your order]({WEBSITE_URL})**\n⚡ Fast Loading | 🔒 Secure Checkout", inline=False)
     embed.add_field(name="✨ What You'll Find", value="🛍️ Browse premium products\n🔐 Secure payment gateway\n💳 Multiple payment options", inline=False)
@@ -226,7 +226,15 @@ class XyooSelect(discord.ui.Select):
         elif selected == "payment_methods":
             await interaction.followup.send(embed=get_payment_methods_embed(), ephemeral=True)
         elif selected == "order_here":
-            await interaction.followup.send(embed=get_order_here_embed(), ephemeral=True)
+            # ---- PERSONALISED LINK ----
+            personal_link = f"{WEBSITE_URL}?user={interaction.user.id}"
+            embed = discord.Embed(
+                title="🛍️ Order Here",
+                description=f"**[Click here to place your order]({personal_link})**\n⚡ Fast Loading | 🔒 Secure Checkout",
+                color=EMBED_COLOR
+            )
+            embed.set_footer(text="Xyoo Shop • Thank you for shopping!")
+            await interaction.followup.send(embed=embed, ephemeral=True)
         elif selected == "prices":
             await interaction.followup.send(embed=get_prices_embed(), ephemeral=True)
 
@@ -337,7 +345,6 @@ async def close_command(interaction: discord.Interaction):
     await interaction.followup.send(embed=get_close_embed())
     asyncio.create_task(close_thread_after_delay(interaction.channel, 5))
 
-# ---------- NEW: /setprice command ----------
 @app_commands.command(name="setprice", description="[Admin] Set the price of an item (USD)")
 @app_commands.default_permissions(administrator=True)
 @app_commands.describe(item="Item name (e.g. 'Unicorn')", price="New price in USD (e.g. 7.99)")
@@ -431,12 +438,26 @@ async def paypal(): return await send_file('payment-paypal.html')
 @app.route('/health')
 async def health(): return jsonify({"status": "ok"}), 200
 
-# ---------- NEW: Prices endpoint ----------
 @app.route('/api/prices')
 async def get_prices():
-    """Return the current price list as JSON."""
     prices = bot.config.get("prices", {})
     return jsonify(prices)
+
+# --- NEW: User lookup endpoint (only works if the user is in the server) ---
+@app.route('/api/user/<int:user_id>')
+async def get_user(user_id):
+    guild = bot.get_guild(GUILD_ID)
+    if not guild:
+        return jsonify({"error": "Guild not found"}), 404
+    member = guild.get_member(user_id)
+    if not member:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({
+        "id": member.id,
+        "username": member.name,
+        "display_name": member.display_name,
+        "avatar_url": str(member.display_avatar.url)
+    })
 
 @app.route('/api/order', methods=['POST'])
 async def receive_order():
