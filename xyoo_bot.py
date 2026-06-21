@@ -53,7 +53,6 @@ DEFAULT_PRODUCTS = [
 ]
 
 def migrate_config(config):
-    """Convert old format (prices dict) to new format (products list)."""
     if "products" not in config:
         if "prices" in config:
             default_map = {p["name"]: p for p in DEFAULT_PRODUCTS}
@@ -72,10 +71,7 @@ def migrate_config(config):
         else:
             config["products"] = DEFAULT_PRODUCTS.copy()
     if "next_id" not in config:
-        if config["products"]:
-            max_id = max(p["id"] for p in config["products"])
-        else:
-            max_id = 0
+        max_id = max((p["id"] for p in config["products"]), default=0)
         config["next_id"] = max_id + 1
     return config
 
@@ -90,8 +86,7 @@ def load_config():
                 return config
     except Exception as e:
         logger.error(f"Failed to load config: {e}")
-    base = {"products": DEFAULT_PRODUCTS.copy(), "user_orders": {}, "next_id": len(DEFAULT_PRODUCTS)+1}
-    return base
+    return {"products": DEFAULT_PRODUCTS.copy(), "user_orders": {}, "next_id": len(DEFAULT_PRODUCTS)+1}
 
 def save_config(config):
     try:
@@ -133,13 +128,7 @@ bot = XyooBot()
 def get_main_embed():
     embed = discord.Embed(
         title="🤖 Xyoo Assistant",
-        description=(
-            "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
-            "✨ **Welcome to Xyoo Shop!** ✨\n"
-            "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n"
-            "Get everything you need with just one click!\n"
-            "👇 **Select an option below to get started:**"
-        ),
+        description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n✨ **Welcome to Xyoo Shop!** ✨\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\nGet everything you need with just one click!\n👇 **Select an option below to get started:**",
         color=EMBED_COLOR,
         timestamp=datetime.datetime.now()
     )
@@ -350,7 +339,6 @@ async def close_command(interaction: discord.Interaction):
     await interaction.followup.send(embed=get_close_embed())
     asyncio.create_task(close_thread_after_delay(interaction.channel, 5))
 
-# ---------- PRODUCT MANAGEMENT COMMANDS ----------
 @app_commands.command(name="setprice", description="[Admin] Change the price of an existing product")
 @app_commands.default_permissions(administrator=True)
 @app_commands.describe(item="Product name", price="New price in USD")
@@ -367,29 +355,54 @@ async def setprice_command(interaction: discord.Interaction, item: str, price: f
             return
     await interaction.response.send_message(f"❌ Item **{item}** not found. Use /addproduct first.", ephemeral=True)
 
-@app_commands.command(name="addproduct", description="[Admin] Add a new product to the shop")
+# ---------- ADD PRODUCT WITH IMAGE ATTACHMENT ----------
+@app_commands.command(name="addproduct", description="[Admin] Add a new product (attach the image file)")
 @app_commands.default_permissions(administrator=True)
-@app_commands.describe(name="Product name", price="Price in USD", image="Image filename (e.g. apple.png)", category="Category (e.g. Pet, Seed)")
-async def addproduct_command(interaction: discord.Interaction, name: str, price: float, image: str, category: str):
+@app_commands.describe(
+    name="Product name",
+    price="Price in USD",
+    category="Category (e.g. Pet, Seed)",
+    image="Attach the product image (PNG/JPG)"
+)
+async def addproduct_command(
+    interaction: discord.Interaction,
+    name: str,
+    price: float,
+    category: str,
+    image: discord.Attachment
+):
     if price < 0:
         await interaction.response.send_message("❌ Price cannot be negative.", ephemeral=True)
         return
+
     products = bot.config.setdefault("products", [])
     if any(p["name"] == name for p in products):
         await interaction.response.send_message(f"❌ Product **{name}** already exists. Use /setprice to update it.", ephemeral=True)
         return
+
+    # Save the attachment to static/ folder
+    ext = os.path.splitext(image.filename)[1]  # e.g., ".png"
+    clean_name = name.lower().replace(" ", "_").replace("'", "")
+    filename = f"{clean_name}{ext}"
+    filepath = os.path.join("static", filename)
+    await image.save(filepath)
+
     new_id = bot.config.get("next_id", 1)
     new_product = {
         "id": new_id,
         "name": name,
         "price": round(price, 2),
-        "image": image,
+        "image": filename,          # just the filename, website will use /static/<filename>
         "category": category
     }
     products.append(new_product)
     bot.config["next_id"] = new_id + 1
     save_config(bot.config)
-    await interaction.response.send_message(f"✅ Added **{name}** (${price:.2f}) with ID {new_id}. Image: `{image}`", ephemeral=True)
+
+    await interaction.response.send_message(
+        f"✅ Added **{name}** (${price:.2f}) with ID {new_id}.\nImage saved as `{filename}`",
+        ephemeral=True
+    )
 
 @app_commands.command(name="removeitem", description="[Admin] Remove a product from the shop")
 @app_commands.default_permissions(administrator=True)
@@ -486,7 +499,6 @@ async def health(): return jsonify({"status": "ok"}), 200
 
 @app.route('/api/products')
 async def get_products():
-    """Return the full product list."""
     products = bot.config.get("products", [])
     return jsonify(products)
 

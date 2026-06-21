@@ -389,7 +389,6 @@
     <script>
         const API_KEY = 'fzRFHIqB8u2WCU5mvGyPZK4tdj9Yw3gcrhLE7MSnVoeiplskTXaQO6bN0AxDJ1';
 
-        // ---------- Games – only meta info, products come from API ----------
         const games = [
             { name: "Grow A Garden 2", image: "/static/gag2.png", products: [] }
         ];
@@ -401,7 +400,6 @@
         window.selectedCategory = 'All';
         window.selectedPayment = '';
 
-        // ---------- User helpers ----------
         function getStoredUsername() { return localStorage.getItem('xyoo_username') || 'Guest User'; }
         function getStoredUserId() { return localStorage.getItem('xyoo_user_id'); }
         function getStoredAvatar() { return localStorage.getItem('xyoo_avatar') || ''; }
@@ -450,7 +448,6 @@
             if (document.getElementById('homePage').classList.contains('active')) updateWelcomeBanner();
         }
 
-        // ---------- Order storage ----------
         async function fetchUserOrders() {
             const userId = getStoredUserId();
             if (!userId) { window.orderHistory = []; renderOrderHistory(); return; }
@@ -473,7 +470,6 @@
             } catch (e) { console.error(e); }
         }
 
-        // ---------- Helper functions ----------
         function findProductById(id) {
             return games.flatMap(g => g.products).find(p => p.id === id) || null;
         }
@@ -502,13 +498,11 @@
             if (page === 'shop') refreshShop();
         }
 
-        // ---------- Dynamic product loading ----------
         async function refreshShop() {
             try {
                 const res = await fetch('/api/products');
                 if (!res.ok) return;
                 const products = await res.json();
-                // Populate the first (and only) game
                 games[0].products = products;
                 document.getElementById('statProducts').textContent = products.length;
                 renderGameTabs();
@@ -517,7 +511,6 @@
             } catch (e) { console.error(e); }
         }
 
-        // ---------- Cart (unchanged) ----------
         window.toggleCart = function() {
             document.getElementById('cartModal').classList.toggle('active');
             if (document.getElementById('cartModal').classList.contains('active')) updateCartView();
@@ -803,11 +796,10 @@
             `).join('');
         }
 
-        // ---------- Startup ----------
         async function init() {
             await loadUserFromParam();
             updateProfileDisplay();
-            await refreshShop();          // load products from API
+            await refreshShop();
             renderFeatured();
             updateCartCount();
             updateWishlistCount();
