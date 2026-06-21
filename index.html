@@ -372,28 +372,31 @@
 
     <script>
         const API_KEY = 'fzRFHIqB8u2WCU5mvGyPZK4tdj9Yw3gcrhLE7MSnVoeiplskTXaQO6bN0AxDJ1';
+
+        // ---------- Games data (initial hardcoded prices, will be overridden by /api/prices) ----------
         const games = [
             { 
                 name: "Grow A Garden 2", image: "/static/gag2.png",
                 products: [
-                    { id: 1, name: "5x Dragon's Breath Seed", image: "/static/dbreath.png", price: 11.99, category: "Seed", sale: 0 },
-                    { id: 2, name: "10x Dragon's Breath Seed", image: "/static/dbreath.png", price: 18.99, category: "Seed", sale: 0 },
-                    { id: 3, name: "5x Ghost Pepper Seed", image: "/static/gpepper.png", price: 9.99, category: "Seed", sale: 0 },
-                    { id: 4, name: "10x Ghost Pepper Seed", image: "/static/gpepper.png", price: 16.99, category: "Seed", sale: 0 },
-                    { id: 5, name: "50x Rainbow Seed", image: "/static/rbseed.png", price: 4.99, category: "Seed", sale: 0 },
-                    { id: 6, name: "100x Rainbow Seed", image: "/static/rbseed.png", price: 8.99, category: "Seed", sale: 0 },
-                    { id: 7, name: "50x Gold Seed", image: "/static/gseed.png", price: 2.99, category: "Seed", sale: 0 },
-                    { id: 8, name: "100x Gold Seed", image: "/static/gseed.png", price: 4.99, category: "Seed", sale: 0 },
-                    { id: 9, name: "Moon Blossom", image: "/static/mb.png", price: 6.99, category: "Seed", sale: 0 },
-                    { id: 10, name: "Dragon Fly", image: "/static/df.png", price: 4.99, category: "Pet", sale: 0 },
-                    { id: 11, name: "Unicorn", image: "/static/uni.png", price: 5.99, category: "Pet", sale: 0 },
-                    { id: 12, name: "Bear", image: "/static/bear.png", price: 3.99, category: "Pet", sale: 0 },
-                    { id: 13, name: "Ice Serpent", image: "/static/is.png", price: 27.99, category: "Pet", sale: 0 },
-                    { id: 14, name: "1M Sheckles", image: "/static/sheckles.png", price: 1.99, category: "Currency", sale: 0 },
+                    { id: 1,  name: "5x Dragon's Breath Seed",  image: "/static/dbreath.png", price: 11.99, category: "Seed", sale: 0 },
+                    { id: 2,  name: "10x Dragon's Breath Seed", image: "/static/dbreath.png", price: 18.99, category: "Seed", sale: 0 },
+                    { id: 3,  name: "5x Ghost Pepper Seed",     image: "/static/gpepper.png", price: 9.99, category: "Seed", sale: 0 },
+                    { id: 4,  name: "10x Ghost Pepper Seed",    image: "/static/gpepper.png", price: 16.99, category: "Seed", sale: 0 },
+                    { id: 5,  name: "50x Rainbow Seed",         image: "/static/rbseed.png",  price: 4.99, category: "Seed", sale: 0 },
+                    { id: 6,  name: "100x Rainbow Seed",        image: "/static/rbseed.png",  price: 8.99, category: "Seed", sale: 0 },
+                    { id: 7,  name: "50x Gold Seed",            image: "/static/gseed.png",   price: 2.99, category: "Seed", sale: 0 },
+                    { id: 8,  name: "100x Gold Seed",           image: "/static/gseed.png",   price: 4.99, category: "Seed", sale: 0 },
+                    { id: 9,  name: "Moon Blossom",             image: "/static/mb.png",      price: 6.99, category: "Seed", sale: 0 },
+                    { id: 10, name: "Dragon Fly",               image: "/static/df.png",      price: 4.99, category: "Pet", sale: 0 },
+                    { id: 11, name: "Unicorn",                  image: "/static/uni.png",     price: 5.99, category: "Pet", sale: 0 },
+                    { id: 12, name: "Bear",                     image: "/static/bear.png",    price: 3.99, category: "Pet", sale: 0 },
+                    { id: 13, name: "Ice Serpent",              image: "/static/is.png",      price: 27.99, category: "Pet", sale: 0 },
+                    { id: 14, name: "1M Sheckles",              image: "/static/sheckles.png",price: 1.99, category: "Currency", sale: 0 },
                 ]
             },
         ];
 
+        // ---------- Global state ----------
         window.cart = JSON.parse(localStorage.getItem('xyoo_cart')) || [];
         window.wishlist = JSON.parse(localStorage.getItem('xyoo_wishlist')) || [];
         window.orderHistory = JSON.parse(localStorage.getItem('xyoo_orders')) || [];
@@ -401,6 +404,7 @@
         window.selectedCategory = 'All';
         window.selectedPayment = '';
 
+        // ---------- Helper functions ----------
         function findProductById(id) {
             for (const g of games) {
                 const p = g.products.find(p => p.id === id);
@@ -423,15 +427,38 @@
         function getTotalPrice() { return window.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2); }
 
         window.goHome = () => showPage('home');
-        window.goToShop = () => showPage('shop');
+        window.goToShop = () => { showPage('shop'); };
         window.goToAccount = () => { showPage('account'); renderOrderHistory(); };
         window.goToWishlist = () => { showPage('wishlist'); renderWishlist(); };
 
         function showPage(page) {
             document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
             document.getElementById(page + 'Page').classList.add('active');
+            // Refresh prices when entering the shop
+            if (page === 'shop') {
+                fetchPrices().then(() => renderProducts());
+            }
         }
 
+        // ---------- Dynamic price loading ----------
+        async function fetchPrices() {
+            try {
+                const res = await fetch('/api/prices');
+                if (!res.ok) return;
+                const prices = await res.json();  // e.g. {"5x Dragon's Breath Seed": 11.99, ...}
+                // Update each product in the first game (only one game so far)
+                for (const product of games[0].products) {
+                    if (product.name in prices) {
+                        product.price = prices[product.name];
+                    }
+                }
+                console.log('Prices updated from bot:', prices);
+            } catch (e) {
+                console.log('Could not fetch prices, using defaults.');
+            }
+        }
+
+        // ---------- Cart functions ----------
         window.toggleCart = function() {
             document.getElementById('cartModal').classList.toggle('active');
             if (document.getElementById('cartModal').classList.contains('active')) updateCartView();
@@ -724,9 +751,18 @@
             `).join('');
         }
 
-        renderGameTabs(); renderCategoryTabs(); renderProducts(); renderFeatured();
-        updateCartCount(); updateWishlistCount();
-        document.getElementById('totalOrders').textContent = window.orderHistory.length;
+        // ---------- Startup ----------
+        async function init() {
+            await fetchPrices();               // get latest prices from bot
+            renderGameTabs();
+            renderCategoryTabs();
+            renderProducts();
+            renderFeatured();
+            updateCartCount();
+            updateWishlistCount();
+            document.getElementById('totalOrders').textContent = window.orderHistory.length;
+        }
+        init();
     </script>
 </body>
 </html>

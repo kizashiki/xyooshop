@@ -34,14 +34,37 @@ app = cors(app, allow_origin="*")
 
 CONFIG_FILE = "bot_config.json"
 
+# Default product prices – MUST match exact product names from the website
+DEFAULT_PRODUCTS = {
+    "5x Dragon's Breath Seed": 11.99,
+    "10x Dragon's Breath Seed": 18.99,
+    "5x Ghost Pepper Seed": 9.99,
+    "10x Ghost Pepper Seed": 16.99,
+    "50x Rainbow Seed": 4.99,
+    "100x Rainbow Seed": 8.99,
+    "50x Gold Seed": 2.99,
+    "100x Gold Seed": 4.99,
+    "Moon Blossom": 6.99,
+    "Dragon Fly": 4.99,
+    "Unicorn": 5.99,
+    "Bear": 3.99,
+    "Ice Serpent": 27.99,
+    "1M Sheckles": 1.99
+}
+
 def load_config():
     try:
         if os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE, "r") as f:
-                return json.load(f)
+                config = json.load(f)
+                # Ensure prices exist; if not, seed with defaults
+                if "prices" not in config:
+                    config["prices"] = DEFAULT_PRODUCTS.copy()
+                return config
     except Exception as e:
         logger.error(f"Failed to load config: {e}")
-    return {}
+    # Fallback
+    return {"prices": DEFAULT_PRODUCTS.copy()}
 
 def save_config(config):
     try:
@@ -65,6 +88,7 @@ class XyooBot(commands.Bot):
         self.tree.add_command(setup_command)
         self.tree.add_command(request_vouch_command)
         self.tree.add_command(close_command)
+        self.tree.add_command(setprice_command)
 
         if os.getenv('SYNC_COMMANDS', 'false').lower() == 'true':
             await self.tree.sync()
@@ -90,8 +114,11 @@ def get_main_embed():
         color=EMBED_COLOR,
         timestamp=datetime.datetime.now()
     )
-    # UPDATED: Changed "Video How To Order" to "Instructions How To Order"
-    embed.add_field(name="📋 Available Options", value="📋 **Instructions How To Order**\n💳 **Payment Methods**\n🛍️ **Order Here**", inline=False)
+    embed.add_field(
+        name="📋 Available Options",
+        value="📋 **Instructions How To Order**\n💳 **Payment Methods**\n🛍️ **Order Here**\n💰 **View Prices**",
+        inline=False
+    )
     embed.add_field(name="⚡ Why Choose Xyoo?", value="✅ Fast & Reliable\n🔒 Secure Payments\n🛡️ 24/7 Support\n⭐ Premium Quality", inline=True)
     embed.add_field(name="🎁 Special Perks", value="🔥 Great Prices\n📝 Customer Reviews\n🚀 Quick Delivery\n💝 Loyalty Rewards", inline=True)
     embed.set_image(url=YOUR_IMAGE_URL)
@@ -99,7 +126,6 @@ def get_main_embed():
     return embed
 
 def get_tutorial_embed():
-    # UPDATED: Now shows text instructions instead of a video
     embed = discord.Embed(
         title="📋 How To Order - Instructions",
         description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n📚 **Follow these simple steps!**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬",
@@ -129,7 +155,6 @@ def get_tutorial_embed():
     return embed
 
 def get_payment_methods_embed():
-    # UPDATED: Removed ROBUX GIFT CARD
     embed = discord.Embed(title="💳 Payment Methods", description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n🌟 **Choose your preferred payment method!**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬", color=EMBED_COLOR)
     embed.add_field(name="💰 Available Methods", value="```💰 GCASH```\n```🌍 PAYPAL```", inline=False)
     embed.add_field(name="💡 Need Help?", value=f"📞 Contact <@{SUPPORT_USER_ID}>\n⏰ We're here 24/7!", inline=False)
@@ -141,6 +166,22 @@ def get_order_here_embed():
     embed.add_field(name="🌐 Visit Our Website", value=f"**[Click here to place your order]({WEBSITE_URL})**\n⚡ Fast Loading | 🔒 Secure Checkout", inline=False)
     embed.add_field(name="✨ What You'll Find", value="🛍️ Browse premium products\n🔐 Secure payment gateway\n💳 Multiple payment options", inline=False)
     embed.set_footer(text="Xyoo Shop • Thank you for shopping!")
+    return embed
+
+def get_prices_embed():
+    prices = bot.config.get("prices", {})
+    if not prices:
+        desc = "No prices configured yet."
+    else:
+        lines = [f"• **{item}**: ${price:.2f}" for item, price in prices.items()]
+        desc = "\n".join(lines)
+    embed = discord.Embed(
+        title="💰 Xyoo Shop – Price List",
+        description=desc,
+        color=EMBED_COLOR,
+        timestamp=datetime.datetime.now()
+    )
+    embed.set_footer(text="Prices in USD • Use /setprice to update")
     return embed
 
 def get_order_embed(order_data, customer_discord, customer_added, member):
@@ -170,10 +211,10 @@ def get_close_embed():
 class XyooSelect(discord.ui.Select):
     def __init__(self):
         options = [
-            # UPDATED: Changed label and emoji
             discord.SelectOption(label="Instructions How To Order", value="tutorial", emoji="📋"),
             discord.SelectOption(label="Payment Methods Available", value="payment_methods", emoji="💳"),
             discord.SelectOption(label="Order Here", value="order_here", emoji="🛍️"),
+            discord.SelectOption(label="View Prices", value="prices", emoji="💰"),
         ]
         super().__init__(placeholder="Choose an option...", min_values=1, max_values=1, options=options)
 
@@ -186,6 +227,8 @@ class XyooSelect(discord.ui.Select):
             await interaction.followup.send(embed=get_payment_methods_embed(), ephemeral=True)
         elif selected == "order_here":
             await interaction.followup.send(embed=get_order_here_embed(), ephemeral=True)
+        elif selected == "prices":
+            await interaction.followup.send(embed=get_prices_embed(), ephemeral=True)
 
 class SelectView(discord.ui.View):
     def __init__(self):
@@ -294,6 +337,20 @@ async def close_command(interaction: discord.Interaction):
     await interaction.followup.send(embed=get_close_embed())
     asyncio.create_task(close_thread_after_delay(interaction.channel, 5))
 
+# ---------- NEW: /setprice command ----------
+@app_commands.command(name="setprice", description="[Admin] Set the price of an item (USD)")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(item="Item name (e.g. 'Unicorn')", price="New price in USD (e.g. 7.99)")
+async def setprice_command(interaction: discord.Interaction, item: str, price: float):
+    if price < 0:
+        await interaction.response.send_message("❌ Price cannot be negative.", ephemeral=True)
+        return
+    if "prices" not in bot.config:
+        bot.config["prices"] = {}
+    bot.config["prices"][item] = round(price, 2)
+    save_config(bot.config)
+    await interaction.response.send_message(f"✅ Price for **{item}** set to **${price:.2f}** USD.", ephemeral=True)
+
 @bot.command(name="sync")
 @commands.is_owner()
 async def sync_commands(ctx):
@@ -371,10 +428,15 @@ async def gcash(): return await send_file('payment-gcash.html')
 @app.route('/payment-paypal.html')
 async def paypal(): return await send_file('payment-paypal.html')
 
-# REMOVED: /payment-robux.html and /api/submit-code
-
 @app.route('/health')
 async def health(): return jsonify({"status": "ok"}), 200
+
+# ---------- NEW: Prices endpoint ----------
+@app.route('/api/prices')
+async def get_prices():
+    """Return the current price list as JSON."""
+    prices = bot.config.get("prices", {})
+    return jsonify(prices)
 
 @app.route('/api/order', methods=['POST'])
 async def receive_order():
