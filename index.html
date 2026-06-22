@@ -430,12 +430,8 @@
 
     /* ==================== MOBILE RESPONSIVE ==================== */
     @media (max-width: 768px) {
-      /* Hide aura on mobile */
-      .cursor-aura {
-        display: none !important;
-      }
+      .cursor-aura { display: none !important; }
 
-      /* Stack overview layout */
       .overview-layout {
         flex-direction: column;
         padding: 0 10px;
@@ -446,7 +442,6 @@
         margin-bottom: 20px;
       }
 
-      /* Navbar adjustments */
       .navbar {
         padding: 10px 15px;
         flex-direction: column;
@@ -461,22 +456,12 @@
         flex-wrap: wrap;
         gap: 10px;
       }
-      .search-bar {
-        width: 100%;
-      }
+      .search-bar { width: 100%; }
 
-      /* Hero rectangle */
-      .hero-rect {
-        padding: 20px;
-      }
-      .hero-rect h1 {
-        font-size: 28px;
-      }
-      .hero-rect p {
-        font-size: 14px;
-      }
+      .hero-rect { padding: 20px; }
+      .hero-rect h1 { font-size: 28px; }
+      .hero-rect p { font-size: 14px; }
 
-      /* Overview cards take full width */
       .games-overview {
         flex-direction: column;
         align-items: stretch;
@@ -490,78 +475,37 @@
         text-align: left;
       }
       .game-overview-card img {
-        width: 60px;
-        height: 60px;
+        width: 60px; height: 60px;
         margin-bottom: 0;
       }
-      .game-overview-card .game-name {
-        font-size: 16px;
-        margin: 0;
-      }
+      .game-overview-card .game-name { font-size: 16px; margin: 0; }
       .game-overview-card .count-badge {
         position: static;
         margin-left: auto;
       }
 
-      /* Detail view */
-      .detail-header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .detail-header h1 {
-        font-size: 28px;
-      }
-      .catalog-content {
-        flex-direction: column;
-      }
-      .category-sidebar {
-        width: 100%;
-        margin-bottom: 15px;
-      }
-      .category-list {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-      .category-list .btn {
-        width: auto;
-        flex: 0 0 auto;
-      }
+      .detail-header { flex-direction: column; align-items: flex-start; }
+      .detail-header h1 { font-size: 28px; }
+
+      .catalog-content { flex-direction: column; }
+      .category-sidebar { width: 100%; margin-bottom: 15px; }
+      .category-list { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+      .category-list .btn { width: auto; flex: 0 0 auto; }
       .products-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 12px;
       }
 
-      /* Modal full screen */
-      .modal-content {
-        width: 100%;
-      }
+      .modal-content { width: 100%; }
     }
 
-    /* Small phones */
     @media (max-width: 480px) {
-      .game-card {
-        padding: 8px;
-        gap: 8px;
-      }
-      .game-card img {
-        width: 32px;
-        height: 32px;
-      }
-      .game-card .game-name {
-        font-size: 14px;
-      }
-      .count-badge {
-        font-size: 10px;
-        padding: 2px 6px;
-      }
-      .hero-rect h1 {
-        font-size: 24px;
-      }
-      .badge {
-        font-size: 10px;
-        padding: 4px 12px;
-      }
+      .game-card { padding: 8px; gap: 8px; }
+      .game-card img { width: 32px; height: 32px; }
+      .game-card .game-name { font-size: 14px; }
+      .count-badge { font-size: 10px; padding: 2px 6px; }
+      .hero-rect h1 { font-size: 24px; }
+      .badge { font-size: 10px; padding: 4px 12px; }
     }
   </style>
 </head>
@@ -580,7 +524,7 @@
       </nav>
     </div>
     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-      <input type="text" class="search-bar" placeholder="Search items..." oninput="filterProducts(this.value)">
+      <input type="text" class="search-bar" id="searchInput" placeholder="Search items..." oninput="handleSearch(this.value)">
       <a href="https://discord.com/users/592402229978333331" target="_blank" class="discord-btn">
         <img src="/static/favicon.png" alt="Xyoo"> Discord
       </a>
@@ -675,7 +619,6 @@
   <script>
     // ---------- AURA CURSOR (only run if visible) ----------
     const aura = document.getElementById('cursorAura');
-    // Simple check: if screen width > 768px, animate
     if (window.innerWidth > 768) {
       let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2, curX = mouseX, curY = mouseY;
       document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
@@ -688,7 +631,6 @@
       }
       animateAura();
     } else {
-      // Ensure it's hidden (already via CSS, but just in case)
       aura.style.display = 'none';
     }
 
@@ -808,6 +750,42 @@
       `).join('');
     }
 
+    // ---------- RENDER PRODUCT GRID (used for detail view updates) ----------
+    function renderProductGrid(products) {
+      const grid = document.getElementById('productsGrid');
+      if (!grid) return;
+      if (!products.length) {
+        grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No products found.</p>';
+        return;
+      }
+      grid.innerHTML = products.map(p => `
+        <div class="product-card">
+          <div class="product-image"><img src="/static/${p.image}" alt="${p.name}"></div>
+          <div class="product-name">${p.name}</div>
+          <div class="price-badge">$${p.price.toFixed(2)}</div>
+          <div class="product-actions">
+            <button class="btn btn-primary" onclick="addToCart(${p.id})">Add to cart</button>
+            <button class="btn ${window.wishlist.includes(p.id)?'btn-primary':''}" onclick="toggleWishlist(${p.id})">❤️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ---------- SEARCH HANDLER (works on the current game if selected) ----------
+    window.handleSearch = function(query) {
+      if (!window.selectedGame) return;
+      const q = query.toLowerCase().trim();
+      let filtered = window.selectedGame.products;
+      if (q) {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(q));
+      }
+      // Also respect category filter
+      if (selectedCategory !== 'All') {
+        filtered = filtered.filter(p => p.category === selectedCategory);
+      }
+      renderProductGrid(filtered);
+    };
+
     // ---------- SWITCH TO GAME DETAIL VIEW ----------
     function showGameDetail(game) {
       document.getElementById('overviewLayout').style.display = 'none';
@@ -823,18 +801,15 @@
         <button class="btn ${c === selectedCategory ? 'btn-primary' : ''}" onclick="selectCategoryInDetail('${c}')">${c}</button>
       `).join('');
 
-      const filteredProducts = selectedCategory === 'All' ? products : products.filter(p => p.category === selectedCategory);
-      const productsHTML = filteredProducts.length ? filteredProducts.map(p => `
-        <div class="product-card">
-          <div class="product-image"><img src="/static/${p.image}" alt="${p.name}"></div>
-          <div class="product-name">${p.name}</div>
-          <div class="price-badge">$${p.price.toFixed(2)}</div>
-          <div class="product-actions">
-            <button class="btn btn-primary" onclick="addToCart(${p.id})">Add to cart</button>
-            <button class="btn ${window.wishlist.includes(p.id)?'btn-primary':''}" onclick="toggleWishlist(${p.id})">❤️</button>
-          </div>
-        </div>
-      `).join('') : '<p style="grid-column:1/-1; text-align:center;">No products found.</p>';
+      // Apply current search value
+      const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+      let filteredProducts = products;
+      if (searchVal) {
+        filteredProducts = filteredProducts.filter(p => p.name.toLowerCase().includes(searchVal));
+      }
+      if (selectedCategory !== 'All') {
+        filteredProducts = filteredProducts.filter(p => p.category === selectedCategory);
+      }
 
       container.innerHTML = `
         <button class="btn" onclick="goBackToOverview()" style="margin-bottom:15px;">← Back to Catalog</button>
@@ -849,14 +824,29 @@
           <div class="category-sidebar">
             <div class="category-list" id="categoryTabs">${categoryTabsHTML}</div>
           </div>
-          <div class="products-grid" id="productsGrid">${productsHTML}</div>
+          <div class="products-grid" id="productsGrid">
+            ${filteredProducts.length ? filteredProducts.map(p => `
+              <div class="product-card">
+                <div class="product-image"><img src="/static/${p.image}" alt="${p.name}"></div>
+                <div class="product-name">${p.name}</div>
+                <div class="price-badge">$${p.price.toFixed(2)}</div>
+                <div class="product-actions">
+                  <button class="btn btn-primary" onclick="addToCart(${p.id})">Add to cart</button>
+                  <button class="btn ${window.wishlist.includes(p.id)?'btn-primary':''}" onclick="toggleWishlist(${p.id})">❤️</button>
+                </div>
+              </div>
+            `).join('') : '<p style="grid-column:1/-1; text-align:center;">No products found.</p>'}
+          </div>
         </div>
       `;
     }
 
     window.selectCategoryInDetail = function(cat) {
       selectedCategory = cat;
-      if (window.selectedGame) buildGameDetailView(window.selectedGame, document.getElementById('gameDetailFullpage'));
+      if (window.selectedGame) {
+        // Rebuild detail view, keeping search value
+        buildGameDetailView(window.selectedGame, document.getElementById('gameDetailFullpage'));
+      }
     };
 
     window.selectGame = function(gameName) {
@@ -866,6 +856,7 @@
       selectedCategory = 'All';
       renderGameList();
       showGameDetail(game);
+      // Clear search input? Optionally leave it.
     };
 
     window.goBackToOverview = function() {
