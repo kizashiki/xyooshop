@@ -15,7 +15,7 @@ GUILD_ID = int(os.getenv('GUILD_ID', '1129463696737972267'))
 ORDER_CHANNEL_ID = int(os.getenv('ORDER_CHANNEL_ID', '0'))
 API_KEY = os.getenv('API_SECRET', 'change-me-in-production')
 PORT = int(os.getenv('PORT', 8080))
-SUPPORT_USER_ID = 592402229978333331
+SUPPORT_USER_ID = 592402229978333331               # Your Discord ID
 VOUCH_CHANNEL_ID = int(os.getenv('VOUCH_CHANNEL_ID', '0'))
 
 WEBSITE_URL = os.getenv('WEBSITE_URL', 'https://xyooshop.onrender.com/')
@@ -34,59 +34,53 @@ app = cors(app, allow_origin="*")
 
 CONFIG_FILE = "bot_config.json"
 
-# ---------- Default full product list ----------
+# ========== UPDATED DEFAULT PRODUCTS (prices + new items) ==========
 DEFAULT_PRODUCTS = [
-    {"id": 1,  "name": "5x Dragon's Breath Seed",  "image": "dbreath.png", "price": 11.99, "category": "Seed"},
-    {"id": 2,  "name": "10x Dragon's Breath Seed", "image": "dbreath.png", "price": 18.99, "category": "Seed"},
-    {"id": 3,  "name": "5x Ghost Pepper Seed",     "image": "gpepper.png", "price": 9.99,  "category": "Seed"},
-    {"id": 4,  "name": "10x Ghost Pepper Seed",    "image": "gpepper.png", "price": 16.99, "category": "Seed"},
-    {"id": 5,  "name": "50x Rainbow Seed",         "image": "rbseed.png",  "price": 4.99,  "category": "Seed"},
-    {"id": 6,  "name": "100x Rainbow Seed",        "image": "rbseed.png",  "price": 8.99,  "category": "Seed"},
-    {"id": 7,  "name": "50x Gold Seed",            "image": "gseed.png",   "price": 2.99,  "category": "Seed"},
-    {"id": 8,  "name": "100x Gold Seed",           "image": "gseed.png",   "price": 4.99,  "category": "Seed"},
-    {"id": 9,  "name": "Moon Blossom",             "image": "mb.png",      "price": 6.99,  "category": "Seed"},
-    {"id": 10, "name": "Dragon Fly",               "image": "df.png",      "price": 4.99,  "category": "Pet"},
-    {"id": 11, "name": "Unicorn",                  "image": "uni.png",     "price": 5.99,  "category": "Pet"},
-    {"id": 12, "name": "Bear",                     "image": "bear.png",    "price": 3.99,  "category": "Pet"},
-    {"id": 13, "name": "Ice Serpent",              "image": "is.png",      "price": 27.99, "category": "Pet"},
-    {"id": 14, "name": "1M Sheckles",              "image": "sheckles.png","price": 1.99,  "category": "Currency"},
+    # Exclusives
+    {"id": 1,  "name": "Moon Bloom Seed (1x)",      "image": "placeholder.png", "price": 7.00,  "category": "Exclusive"},
+    {"id": 2,  "name": "Ghost Pepper Seed (1x)",    "image": "gpepper.png",    "price": 3.00,  "category": "Exclusive"},
+    {"id": 3,  "name": "Ghost Pepper Seed (5x)",    "image": "gpepper.png",    "price": 10.00, "category": "Exclusive"},
+    {"id": 4,  "name": "Ghost Pepper Seed (10x)",   "image": "gpepper.png",    "price": 15.00, "category": "Exclusive"},
+    {"id": 5,  "name": "Dragon Breath Seed (1x)",   "image": "dbreath.png",    "price": 4.00,  "category": "Exclusive"},
+    {"id": 6,  "name": "Dragon Breath Seed (5x)",   "image": "dbreath.png",    "price": 12.00, "category": "Exclusive"},
+    {"id": 7,  "name": "Dragon Breath Seed (10x)",  "image": "dbreath.png",    "price": 20.00, "category": "Exclusive"},
+    # Normal
+    {"id": 8,  "name": "Bamboo Seed (1k)",          "image": "placeholder.png", "price": 3.00,  "category": "Normal"},
+    {"id": 9,  "name": "Mushroom Seed (100)",       "image": "placeholder.png", "price": 3.00,  "category": "Normal"},
+    # Rainbow
+    {"id": 10, "name": "Rainbow Seed (50)",         "image": "rbseed.png",     "price": 5.00,  "category": "Rainbow"},
+    {"id": 11, "name": "Rainbow Seed (100)",        "image": "rbseed.png",     "price": 9.00,  "category": "Rainbow"},
+    # Golden
+    {"id": 12, "name": "Golden Seed (50)",          "image": "gseed.png",      "price": 3.00,  "category": "Golden"},
+    {"id": 13, "name": "Golden Seed (100)",         "image": "gseed.png",      "price": 5.00,  "category": "Golden"},
+    # Gear
+    {"id": 14, "name": "Super Sprinkler (10)",      "image": "placeholder.png", "price": 4.00,  "category": "Gear"},
+    {"id": 15, "name": "Super Watering Can (10)",   "image": "placeholder.png", "price": 4.00,  "category": "Gear"},
+    {"id": 16, "name": "Legendary Sprinkler (10)",  "image": "placeholder.png", "price": 2.00,  "category": "Gear"},
+    # Pets
+    {"id": 17, "name": "Bear",                      "image": "bear.png",       "price": 3.00,  "category": "Pets"},
+    {"id": 18, "name": "Dragonfly",                 "image": "df.png",         "price": 3.00,  "category": "Pets"},
+    {"id": 19, "name": "Unicorn",                   "image": "uni.png",        "price": 4.00,  "category": "Pets"},
+    {"id": 20, "name": "Raccoon",                   "image": "racc.png",       "price": 10.00, "category": "Pets"},
+    {"id": 21, "name": "Ice Serpent",               "image": "is.png",         "price": 28.00, "category": "Pets"},
 ]
 
-def migrate_config(config):
-    if "products" not in config:
-        if "prices" in config:
-            default_map = {p["name"]: p for p in DEFAULT_PRODUCTS}
-            new_products = []
-            for name, price in config["prices"].items():
-                if name in default_map:
-                    entry = default_map[name].copy()
-                else:
-                    entry = {"id": 0, "name": name, "image": "unknown.png", "category": "Unknown"}
-                entry["price"] = price
-                new_products.append(entry)
-            for i, p in enumerate(new_products, start=1):
-                p["id"] = i
-            config["products"] = new_products
-            del config["prices"]
-        else:
-            config["products"] = DEFAULT_PRODUCTS.copy()
-    if "next_id" not in config:
-        max_id = max((p["id"] for p in config["products"]), default=0)
-        config["next_id"] = max_id + 1
-    return config
+# ---- SUPPORT CHAT STORAGE ----
+support_sessions = {}   # session_id -> list of {"from": "user"/"admin", "text": "..."}
 
 def load_config():
     try:
         if os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE, "r") as f:
                 config = json.load(f)
-                config = migrate_config(config)
+                if "products" not in config:
+                    config["products"] = DEFAULT_PRODUCTS.copy()
                 if "user_orders" not in config:
                     config["user_orders"] = {}
                 return config
     except Exception as e:
         logger.error(f"Failed to load config: {e}")
-    return {"products": DEFAULT_PRODUCTS.copy(), "user_orders": {}, "next_id": len(DEFAULT_PRODUCTS)+1}
+    return {"products": DEFAULT_PRODUCTS.copy(), "user_orders": {}}
 
 def save_config(config):
     try:
@@ -113,6 +107,7 @@ class XyooBot(commands.Bot):
         self.tree.add_command(setprice_command)
         self.tree.add_command(addproduct_command)
         self.tree.add_command(removeitem_command)
+        self.tree.add_command(reply_command)
 
         if os.getenv('SYNC_COMMANDS', 'false').lower() == 'true':
             await self.tree.sync()
@@ -128,7 +123,13 @@ bot = XyooBot()
 def get_main_embed():
     embed = discord.Embed(
         title="🤖 Xyoo Assistant",
-        description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n✨ **Welcome to Xyoo Shop!** ✨\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\nGet everything you need with just one click!\n👇 **Select an option below to get started:**",
+        description=(
+            "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
+            "✨ **Welcome to Xyoo Shop!** ✨\n"
+            "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n"
+            "Get everything you need with just one click!\n"
+            "👇 **Select an option below to get started:**"
+        ),
         color=EMBED_COLOR,
         timestamp=datetime.datetime.now()
     )
@@ -171,7 +172,7 @@ def get_order_here_embed():
 def get_prices_embed():
     products = bot.config.get("products", [])
     if not products:
-        desc = "No products yet."
+        desc = "No prices configured yet."
     else:
         lines = [f"• **{p['name']}**: ${p['price']:.2f}" for p in products]
         desc = "\n".join(lines)
@@ -202,7 +203,7 @@ def get_close_embed():
     embed.set_footer(text="Xyoo Shop • Thread closed")
     return embed
 
-# ================== UI COMPONENTS ==================
+# ================== UI COMPONENTS (unchanged) ==================
 class XyooSelect(discord.ui.Select):
     def __init__(self):
         options = [
@@ -339,6 +340,7 @@ async def close_command(interaction: discord.Interaction):
     await interaction.followup.send(embed=get_close_embed())
     asyncio.create_task(close_thread_after_delay(interaction.channel, 5))
 
+# ---------- PRICE MANAGEMENT ----------
 @app_commands.command(name="setprice", description="[Admin] Change the price of an existing product")
 @app_commands.default_permissions(administrator=True)
 @app_commands.describe(item="Product name", price="New price in USD")
@@ -355,54 +357,33 @@ async def setprice_command(interaction: discord.Interaction, item: str, price: f
             return
     await interaction.response.send_message(f"❌ Item **{item}** not found. Use /addproduct first.", ephemeral=True)
 
-# ---------- ADD PRODUCT WITH IMAGE ATTACHMENT ----------
-@app_commands.command(name="addproduct", description="[Admin] Add a new product (attach the image file)")
+@app_commands.command(name="addproduct", description="[Admin] Add a new product (attach the image)")
 @app_commands.default_permissions(administrator=True)
-@app_commands.describe(
-    name="Product name",
-    price="Price in USD",
-    category="Category (e.g. Pet, Seed)",
-    image="Attach the product image (PNG/JPG)"
-)
-async def addproduct_command(
-    interaction: discord.Interaction,
-    name: str,
-    price: float,
-    category: str,
-    image: discord.Attachment
-):
+@app_commands.describe(name="Product name", price="Price in USD", category="Category (e.g. Exclusive, Gear)", image="Attach the product image (PNG/JPG)")
+async def addproduct_command(interaction: discord.Interaction, name: str, price: float, category: str, image: discord.Attachment):
     if price < 0:
         await interaction.response.send_message("❌ Price cannot be negative.", ephemeral=True)
         return
-
     products = bot.config.setdefault("products", [])
     if any(p["name"] == name for p in products):
         await interaction.response.send_message(f"❌ Product **{name}** already exists. Use /setprice to update it.", ephemeral=True)
         return
-
-    # Save the attachment to static/ folder
-    ext = os.path.splitext(image.filename)[1]  # e.g., ".png"
+    ext = os.path.splitext(image.filename)[1]
     clean_name = name.lower().replace(" ", "_").replace("'", "")
     filename = f"{clean_name}{ext}"
     filepath = os.path.join("static", filename)
     await image.save(filepath)
-
-    new_id = bot.config.get("next_id", 1)
+    new_id = max((p["id"] for p in products), default=0) + 1
     new_product = {
         "id": new_id,
         "name": name,
         "price": round(price, 2),
-        "image": filename,          # just the filename, website will use /static/<filename>
+        "image": filename,
         "category": category
     }
     products.append(new_product)
-    bot.config["next_id"] = new_id + 1
     save_config(bot.config)
-
-    await interaction.response.send_message(
-        f"✅ Added **{name}** (${price:.2f}) with ID {new_id}.\nImage saved as `{filename}`",
-        ephemeral=True
-    )
+    await interaction.response.send_message(f"✅ Added **{name}** (${price:.2f}) with ID {new_id}. Image: `{filename}`", ephemeral=True)
 
 @app_commands.command(name="removeitem", description="[Admin] Remove a product from the shop")
 @app_commands.default_permissions(administrator=True)
@@ -416,6 +397,17 @@ async def removeitem_command(interaction: discord.Interaction, item: str):
             await interaction.response.send_message(f"🗑️ Removed **{item}** from the shop.", ephemeral=True)
             return
     await interaction.response.send_message(f"❌ Product **{item}** not found.", ephemeral=True)
+
+# ---------- SUPPORT REPLY ----------
+@app_commands.command(name="reply", description="[Admin] Reply to a support chat session")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(session="Session ID (shown in the DM)", message="Your reply text")
+async def reply_command(interaction: discord.Interaction, session: str, message: str):
+    if session not in support_sessions:
+        await interaction.response.send_message("❌ Unknown session ID.", ephemeral=True)
+        return
+    support_sessions[session].append({"from": "admin", "text": message})
+    await interaction.response.send_message(f"✅ Reply sent to session `{session}`.", ephemeral=True)
 
 @bot.command(name="sync")
 @commands.is_owner()
@@ -464,11 +456,7 @@ async def process_order(order_data):
     if customer_discord:
         member = find_member(guild, customer_discord)
         if member:
-            await channel.set_permissions(member,
-                send_messages_in_threads=True,
-                read_messages=True,
-                attach_files=True
-            )
+            await channel.set_permissions(member, send_messages_in_threads=True, read_messages=True, attach_files=True)
             await thread.add_user(member)
             customer_added = True
 
@@ -549,6 +537,41 @@ async def save_user_order():
     user_orders.append(order_copy)
     save_config(bot.config)
     return jsonify({"status": "ok"}), 201
+
+# ---------- SUPPORT CHAT API ----------
+@app.route('/api/support/send', methods=['POST'])
+async def support_send():
+    if request.headers.get('X-API-Key') != API_KEY:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = await request.get_json()
+    session_id = data.get('session_id')
+    user_message = data.get('message')
+    if not session_id or not user_message:
+        return jsonify({"error": "Missing session_id or message"}), 400
+
+    if session_id not in support_sessions:
+        support_sessions[session_id] = []
+    support_sessions[session_id].append({"from": "user", "text": user_message})
+
+    support_user = bot.get_user(SUPPORT_USER_ID)
+    if support_user:
+        try:
+            embed = discord.Embed(
+                title="💬 New Support Message",
+                description=f"**Session:** `{session_id}`\n**Message:** {user_message}",
+                color=EMBED_COLOR
+            )
+            embed.set_footer(text="Reply with /reply session:<id> message:<text>")
+            await support_user.send(embed=embed)
+        except Exception as e:
+            logger.error(f"Failed to DM support user: {e}")
+
+    return jsonify({"status": "ok"}), 200
+
+@app.route('/api/support/messages/<session_id>', methods=['GET'])
+async def support_messages(session_id):
+    msgs = support_sessions.get(session_id, [])
+    return jsonify(msgs)
 
 @app.route('/api/order', methods=['POST'])
 async def receive_order():

@@ -11,23 +11,22 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      background: #0a0a0a; /* deep matte black */
+      background: #0a0a0a;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       color: #fff;
       min-height: 100vh;
       overflow-x: hidden;
     }
 
-    /* ---- THICKER, MORE VISIBLE DIFFUSE AURA CURSOR (no circle) ---- */
+    /* ---- THICKER DIFFUSE AURA CURSOR (no circle) ---- */
     .cursor-aura {
       position: fixed;
       width: 280px;
       height: 280px;
-      border-radius: 0;                   /* no circle shape */
+      border-radius: 0;
       pointer-events: none;
       z-index: 9999;
       transform: translate(-50%, -50%);
-      /* Stronger, more opaque pink/purple glow */
       background: radial-gradient(circle, rgba(255,42,157,0.35) 0%, rgba(139,92,246,0.15) 30%, transparent 60%);
       filter: blur(16px);
       animation: auraPulse 2s infinite alternate;
@@ -150,7 +149,6 @@
       text-align: left;
       box-shadow: 0 0 20px rgba(139,92,246,0.3), inset 0 0 15px rgba(255,255,255,0.05);
     }
-    /* Dark & white animated ribbon */
     .hero-rect .neon-ribbon {
       position: absolute;
       top: 0; left: -10%;
@@ -354,7 +352,32 @@
       padding: 8px 20px; text-align: center; margin-top: 10px; font-size: 10px; color: #888;
     }
 
-    /* ==================== MOBILE ==================== */
+    /* ========== SUPPORT CHAT WIDGET ========== */
+    #supportBtn {
+      position: fixed; bottom: 20px; left: 20px; z-index: 500;
+      background: #ff2a9d; color: #fff; border: none; border-radius: 50%;
+      width: 56px; height: 56px; font-size: 24px; cursor: pointer;
+      box-shadow: 0 0 20px #ff2a9d; display: flex; align-items: center; justify-content: center;
+    }
+    #supportModal {
+      display: none; position: fixed; bottom: 90px; left: 20px;
+      width: 320px; max-height: 400px; background: #1a1a2e;
+      border: 1px solid #8b5cf6; border-radius: 16px;
+      box-shadow: 0 0 20px rgba(139,92,246,0.5); z-index: 600;
+      overflow: hidden; flex-direction: column;
+    }
+    #supportMessages {
+      flex: 1; padding: 10px; overflow-y: auto; max-height: 250px;
+    }
+    #supportInput {
+      flex: 1; background: #0a0a0a; border: 1px solid #555; color: #fff;
+      border-radius: 20px; padding: 8px 14px; outline: none;
+    }
+    #sendSupport {
+      background: #ff2a9d; border: none; color: #fff;
+      border-radius: 20px; padding: 8px 16px; cursor: pointer;
+    }
+
     @media (max-width: 768px) {
       .cursor-aura { display: none !important; }
       .overview-layout { flex-direction: row; padding: 0 10px; gap: 10px; }
@@ -472,6 +495,24 @@
         <button class="close-btn" onclick="toggleCart()">✕</button>
       </div>
       <div id="cartView"></div>
+    </div>
+  </div>
+
+  <!-- FLOATING SUPPORT BUTTON -->
+  <button id="supportBtn">💬</button>
+
+  <!-- SUPPORT CHAT MODAL -->
+  <div id="supportModal">
+    <div style="padding:12px; background:rgba(0,0,0,0.8); display:flex; justify-content:space-between; align-items:center;">
+      <strong>💬 Support</strong>
+      <button id="closeSupport" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+    </div>
+    <div id="supportMessages">
+      <div style="color:#aaa; text-align:center;">How can we help? Type your message below.</div>
+    </div>
+    <div style="padding:10px; border-top:1px solid #8b5cf6; display:flex; gap:8px;">
+      <input type="text" id="supportInput" placeholder="Type a message...">
+      <button id="sendSupport">Send</button>
     </div>
   </div>
 
@@ -928,6 +969,87 @@
       document.getElementById('cartModal').classList.toggle('active');
       if (document.getElementById('cartModal').classList.contains('active')) updateCartView();
     };
+
+    // ========== SUPPORT CHAT ==========
+    (function() {
+      const supportBtn = document.getElementById('supportBtn');
+      const supportModal = document.getElementById('supportModal');
+      const closeSupport = document.getElementById('closeSupport');
+      const supportMessages = document.getElementById('supportMessages');
+      const supportInput = document.getElementById('supportInput');
+      const sendSupport = document.getElementById('sendSupport');
+
+      let sessionId = localStorage.getItem('xyoo_support_session');
+      if (!sessionId) {
+        sessionId = 'sess-' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('xyoo_support_session', sessionId);
+      }
+
+      let pollInterval = null;
+      async function pollMessages() {
+        try {
+          const res = await fetch(`/api/support/messages/${sessionId}`);
+          if (!res.ok) return;
+          const messages = await res.json();
+          renderMessages(messages);
+        } catch (e) { /* ignore */ }
+      }
+
+      function renderMessages(msgs) {
+        let html = '';
+        if (msgs.length === 0) {
+          html = '<div style="color:#aaa; text-align:center;">How can we help? Type your message below.</div>';
+        } else {
+          msgs.forEach(m => {
+            if (m.from === 'user') {
+              html += `<div style="text-align:right; margin:6px 0;"><span style="background:#ff2a9d; color:#fff; padding:6px 12px; border-radius:16px; display:inline-block; max-width:80%;">${escapeHtml(m.text)}</span></div>`;
+            } else {
+              html += `<div style="text-align:left; margin:6px 0;"><span style="background:#8b5cf6; color:#fff; padding:6px 12px; border-radius:16px; display:inline-block; max-width:80%;">${escapeHtml(m.text)}</span></div>`;
+            }
+          });
+        }
+        supportMessages.innerHTML = html;
+        supportMessages.scrollTop = supportMessages.scrollHeight;
+      }
+
+      function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+      }
+
+      supportBtn.addEventListener('click', () => {
+        supportModal.style.display = 'flex';
+        pollMessages();
+        if (!pollInterval) pollInterval = setInterval(pollMessages, 2000);
+      });
+
+      closeSupport.addEventListener('click', () => {
+        supportModal.style.display = 'none';
+        if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+      });
+
+      sendSupport.addEventListener('click', async () => {
+        const msg = supportInput.value.trim();
+        if (!msg) return;
+        supportInput.value = '';
+        supportMessages.innerHTML += `<div style="text-align:right; margin:6px 0;"><span style="background:#ff2a9d; color:#fff; padding:6px 12px; border-radius:16px; display:inline-block; max-width:80%;">${escapeHtml(msg)}</span></div>`;
+        supportMessages.scrollTop = supportMessages.scrollHeight;
+
+        try {
+          await fetch('/api/support/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+            body: JSON.stringify({ session_id: sessionId, message: msg })
+          });
+        } catch (e) {
+          console.error('Failed to send support message:', e);
+        }
+      });
+
+      supportInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendSupport.click();
+      });
+    })();
 
     // ---------- STARTUP ----------
     async function init() {
