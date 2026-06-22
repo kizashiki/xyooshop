@@ -136,17 +136,19 @@
 
     .main-content { flex: 1; min-width: 0; }
 
-    /* ========== NEON POSTER HEADER ========== */
-    .poster-section {
+    /* ========== HERO RECTANGLE (classic brand box with flowing ribbon) ========== */
+    .hero-rect {
       position: relative;
-      max-width: 100%;
-      padding: 40px 20px 30px;
-      text-align: center;
-      background: #0a0a0a;
       overflow: hidden;
-      border-bottom: 1px solid #333;
+      background: linear-gradient(135deg, rgba(255,42,157,0.2), rgba(139,92,246,0.15));
+      border: 1px solid #8b5cf6;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 20px;
+      text-align: left;
+      box-shadow: 0 0 20px rgba(139,92,246,0.3), inset 0 0 15px rgba(255,255,255,0.05);
     }
-    .neon-ribbon {
+    .hero-rect .neon-ribbon {
       position: absolute;
       top: 0; left: -10%;
       width: 120%; height: 100%;
@@ -160,87 +162,30 @@
       0% { transform: translateX(-100%) skewX(-15deg); }
       100% { transform: translateX(100%) skewX(-15deg); }
     }
-    .poster-content {
-      position: relative;
-      z-index: 3;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-    .neon-line {
-      width: 100%;
-      height: 2px;
-      background: #fff;
-      margin: 25px 0;
-      box-shadow: 0 0 15px #fff, 0 0 30px #ff2a9d;
-      position: relative;
-      z-index: 4;
-    }
-    .poster-row {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 0;
-      flex-wrap: wrap;
-    }
-    .poster-row.vertical-split {
-      justify-content: center;
-      gap: 0;
-    }
-    .vert-divider {
-      width: 2px;
-      height: 40px;
-      background: #fff;
-      margin: 0 30px;
-      box-shadow: 0 0 15px #fff, 0 0 30px #ff2a9d;
-    }
-    .poster-text {
-      font-size: 40px;
-      font-weight: 700;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      background: linear-gradient(to right, #fff, #ddd);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 20px rgba(255,255,255,0.7);
-    }
-    .poster-sub {
-      font-size: 24px;
-      font-weight: 600;
-      color: #ccc;
-      margin: 0 10px;
-    }
-    .poster-number {
-      font-size: 64px;
-      font-weight: 700;
-      color: #ff2a9d;
-      text-shadow: 0 0 20px #ff2a9d;
-    }
-    .poster-label {
-      font-size: 24px;
-      font-weight: 600;
-      color: #fff;
-      margin-right: 15px;
-    }
-
-    /* ---- HERO RECTANGLE (classic brand box) ---- */
-    .hero-rect {
-      background: linear-gradient(135deg, rgba(255,42,157,0.2), rgba(139,92,246,0.15));
-      border: 1px solid #8b5cf6;
-      border-radius: 16px;
-      padding: 30px;
-      margin-bottom: 20px;
-      text-align: left;
-      box-shadow: 0 0 20px rgba(139,92,246,0.3);
-    }
     .hero-rect h1 {
       font-size: 36px;
       background: linear-gradient(to right, #fff, #ff2a9d);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       margin-bottom: 8px;
+      position: relative;
+      z-index: 3;
     }
-    .hero-rect p { color: #bbb; font-size: 18px; margin: 0 0 16px 0; }
-
-    .hero-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .hero-rect p {
+      color: #bbb;
+      font-size: 18px;
+      margin: 0 0 16px 0;
+      position: relative;
+      z-index: 3;
+    }
+    .hero-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      position: relative;
+      z-index: 3;
+    }
     .hero-trust-badges { display: flex; flex-wrap: wrap; gap: 10px; }
     .badge {
       background: rgba(255,42,157,0.12); border: 1px solid #ff2a9d;
@@ -393,11 +338,6 @@
       .cursor-aura { display: none !important; }
       .overview-layout { flex-direction: row; padding: 0 10px; gap: 10px; }
       .sidebar { width: 200px; position: sticky; top: 100px; padding: 15px; margin-bottom: 0; }
-      .poster-text { font-size: 28px; }
-      .poster-number { font-size: 48px; }
-      .poster-sub { font-size: 18px; }
-      .poster-label { font-size: 18px; }
-      .vert-divider { height: 30px; margin: 0 15px; }
       .hero-rect { padding: 20px; }
       .hero-rect h1 { font-size: 28px; }
       .hero-rect p { font-size: 14px; }
@@ -443,33 +383,6 @@
 
   <!-- HOME PAGE -->
   <div id="homePage" class="page-section active">
-    <!-- NEON POSTER HEADER -->
-    <section class="poster-section">
-      <div class="neon-ribbon"></div>
-      <div class="poster-content">
-        <div class="poster-row">
-          <span class="poster-text">Xyoo Shop</span>
-        </div>
-        <div class="neon-line"></div>
-        <div class="poster-row vertical-split">
-          <span class="poster-sub">Roblox Items</span>
-          <div class="vert-divider"></div>
-          <span class="poster-sub">Currency</span>
-        </div>
-        <div class="neon-line"></div>
-        <div class="poster-row">
-          <span class="poster-label">Trusted by</span>
-          <span class="poster-number" id="trustedCount">0</span>
-        </div>
-        <div class="neon-line"></div>
-        <div class="poster-row vertical-split">
-          <span class="poster-sub">100% Secure</span>
-          <div class="vert-divider"></div>
-          <span class="poster-sub">Fast Delivery</span>
-        </div>
-      </div>
-    </section>
-
     <!-- OVERVIEW LAYOUT (sidebar + hero box + game cards) -->
     <div id="overviewLayout" class="overview-layout">
       <aside class="sidebar">
@@ -478,8 +391,9 @@
       </aside>
 
       <div class="main-content">
-        <!-- CLASSIC HERO BOX -->
+        <!-- CLASSIC HERO BOX with flowing ribbon inside -->
         <div class="hero-rect">
+          <div class="neon-ribbon"></div>
           <h1>Xyoo - Roblox Shop</h1>
           <p>Roblox items, currency & bundles — Trusted · Secure · Fast delivery</p>
           <div class="hero-bottom">
@@ -644,7 +558,6 @@
           games[0].products = allProducts;
           games[0].productCount = allProducts.length;
         }
-        document.getElementById('trustedCount').textContent = games[0].productCount;
         renderGameList();
         renderGamesOverview();
       } catch (e) { console.error(e); }
