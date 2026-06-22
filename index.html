@@ -36,61 +36,34 @@
     }
 
     /* ---- GLOWING TEXT & BUTTONS ---- */
-    h1, h2, h3 {
-      text-shadow: 0 0 15px #ff2a9d, 0 0 30px #8b5cf6;
-    }
+    h1, h2, h3 { text-shadow: 0 0 15px #ff2a9d, 0 0 30px #8b5cf6; }
     .btn {
-      background: transparent;
-      border: 1px solid #8b5cf6;
-      color: #fff;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.2s;
-      text-decoration: none;
-      display: inline-block;
+      background: transparent; border: 1px solid #8b5cf6; color: #fff;
+      padding: 8px 18px; border-radius: 20px; font-weight: 600; cursor: pointer;
+      transition: 0.2s; text-decoration: none; display: inline-block;
     }
     .btn:hover { border-color: #ff2a9d; box-shadow: 0 0 12px #ff2a9d; }
-    .btn-primary {
-      background: #ff2a9d;
-      border: none;
-      box-shadow: 0 0 12px #ff2a9d;
-    }
+    .btn-primary { background: #ff2a9d; border: none; box-shadow: 0 0 12px #ff2a9d; }
     .btn-primary:hover { box-shadow: 0 0 20px #ff2a9d; }
 
     /* ---- NAVIGATION BAR ---- */
     .navbar {
-      background: rgba(17,7,31,0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(139,92,246,0.3);
-      padding: 12px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 15px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      background: rgba(17,7,31,0.85); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(139,92,246,0.3); padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 100;
     }
     .nav-left { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
 
     /* ---- RUNNING SHINE LOGO ---- */
     .logo {
-      font-size: 24px;
-      font-weight: 700;
+      font-size: 24px; font-weight: 700;
       background: linear-gradient(90deg, #ff2a9d, #a855f7, #ff2a9d);
       background-size: 200% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: shine 2s linear infinite;
-      cursor: pointer;
-      text-shadow: none;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      animation: shine 2s linear infinite; cursor: pointer; text-shadow: none;
     }
-    @keyframes shine {
-      to { background-position: 200% center; }
-    }
+    @keyframes shine { to { background-position: 200% center; } }
 
     .nav-links { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
     .nav-links a, .nav-links button {
@@ -124,19 +97,14 @@
       width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px;
     }
 
-    /* ---- LAYOUT (Sidebar + Main) – used only when no game selected ---- */
+    /* ---- LAYOUT (Sidebar + Main) – used when no game selected ---- */
     .overview-layout {
-      display: flex;
-      gap: 20px;
-      max-width: 1400px;
-      margin: 20px auto;
-      padding: 0 20px;
+      display: flex; gap: 20px; max-width: 1400px; margin: 20px auto; padding: 0 20px;
     }
     .sidebar {
       width: 260px; flex-shrink: 0;
       background: rgba(255,42,157,0.05); border: 1px solid #8b5cf6;
-      border-radius: 16px; padding: 20px;
-      position: sticky; top: 100px; height: fit-content;
+      border-radius: 16px; padding: 20px; position: sticky; top: 100px; height: fit-content;
     }
     .sidebar h3 {
       margin-bottom: 15px;
@@ -149,15 +117,9 @@
       border: 1px solid #8b5cf6; border-radius: 12px; cursor: pointer;
       transition: 0.2s; background: rgba(255,255,255,0.03);
     }
-    .game-card:hover {
-      border-color: #ff2a9d;
-      box-shadow: 0 0 15px #ff2a9d;
-      transform: translateX(4px);
-    }
+    .game-card:hover { border-color: #ff2a9d; box-shadow: 0 0 15px #ff2a9d; transform: translateX(4px); }
     .game-card.active {
-      border-color: #ff2a9d;
-      box-shadow: 0 0 20px #ff2a9d;
-      background: rgba(255,42,157,0.15);
+      border-color: #ff2a9d; box-shadow: 0 0 20px #ff2a9d; background: rgba(255,42,157,0.15);
     }
     .game-card img { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; }
 
@@ -165,21 +127,13 @@
       font-weight: 600;
       background: linear-gradient(90deg, #ff2a9d, #a855f7, #ff2a9d);
       background-size: 200% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       animation: shine 2s linear infinite;
     }
-
     .count-badge {
-      background: rgba(255,42,157,0.15);
-      border: 1px solid #ff2a9d;
-      color: #ff2a9d;
-      padding: 2px 8px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-left: auto;
-      white-space: nowrap;
+      background: rgba(255,42,157,0.15); border: 1px solid #ff2a9d;
+      color: #ff2a9d; padding: 2px 8px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; margin-left: auto; white-space: nowrap;
     }
 
     .main-content { flex: 1; min-width: 0; }
@@ -187,262 +141,152 @@
     /* ---- HERO RECTANGLE (left-aligned) ---- */
     .hero-rect {
       background: linear-gradient(135deg, rgba(255,42,157,0.2), rgba(139,92,246,0.15));
-      border: 1px solid #8b5cf6;
-      border-radius: 16px;
-      padding: 30px;
-      margin-bottom: 20px;
-      text-align: left;
-      box-shadow: 0 0 20px rgba(139,92,246,0.3);
+      border: 1px solid #8b5cf6; border-radius: 16px; padding: 30px;
+      margin-bottom: 20px; text-align: left; box-shadow: 0 0 20px rgba(139,92,246,0.3);
     }
     .hero-rect h1 {
       font-size: 36px;
       background: linear-gradient(to right, #fff, #ff2a9d);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 8px;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px;
     }
-    .hero-rect p {
-      color: #bbb;
-      font-size: 18px;
-      margin: 0 0 16px 0;
-    }
+    .hero-rect p { color: #bbb; font-size: 18px; margin: 0 0 16px 0; }
 
-    .hero-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
+    .hero-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .hero-trust-badges { display: flex; flex-wrap: wrap; gap: 10px; }
     .badge {
-      background: rgba(255,42,157,0.12);
-      border: 1px solid #ff2a9d;
-      color: #ff2a9d;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
+      background: rgba(255,42,157,0.12); border: 1px solid #ff2a9d;
+      color: #ff2a9d; padding: 6px 16px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; text-transform: uppercase;
     }
     .support-badge { cursor: pointer; text-decoration: none; }
 
-    /* ---- GAMES OVERVIEW (when no game selected) ---- */
+    /* ==================== STYLED OVERVIEW CARDS (full image + floating label) ==================== */
     .games-overview {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      margin-bottom: 20px;
+      display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;
     }
-    .game-overview-card {
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(10px);
-      border: 1px solid #8b5cf6;
-      border-radius: 16px;
-      padding: 24px;
-      text-align: center;
-      cursor: pointer;
-      transition: 0.2s;
-      width: 200px;
-      box-shadow: 0 0 15px rgba(139,92,246,0.2);
+    .game-cover-card {
       position: relative;
+      width: 240px; height: 180px;
+      border-radius: 16px;
+      background-size: cover; background-position: center;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      box-shadow: 0 0 15px rgba(139,92,246,0.3);
     }
-    .game-overview-card:hover {
-      border-color: #ff2a9d;
+    .game-cover-card:hover {
       transform: translateY(-6px);
       box-shadow: 0 0 25px #ff2a9d;
     }
-    .game-overview-card img {
-      width: 80px; height: 80px;
-      object-fit: contain;
-      margin-bottom: 10px;
-      filter: drop-shadow(0 0 8px #ff2a9d);
+    .game-cover-card .overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(17,7,31,0.65); border-radius: 16px;
     }
-    .game-overview-card .game-name {
-      font-weight: 700;
-      font-size: 18px;
-      margin: 8px 0 4px;
-      background: linear-gradient(90deg, #ff2a9d, #a855f7, #ff2a9d);
-      background-size: 200% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: shine 2s linear infinite;
+    /* Floating label with electricity border */
+    .game-label {
+      position: absolute; z-index: 2;
+      bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      padding: 10px 20px; border-radius: 30px;
+      text-align: center;
+      border: 2px solid transparent;
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+      background-image: 
+        linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+        conic-gradient(from 0deg, #ff2a9d, #fff, #ff2a9d, #fff, #ff2a9d);
+      animation: borderSpin 3s linear infinite;
     }
-    .game-overview-card .count-badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      padding: 3px 10px;
-      font-size: 12px;
+    @keyframes borderSpin { to { filter: hue-rotate(360deg); } }
+
+    .game-label .game-name {
+      font-weight: 700; font-size: 18px;
+      background: linear-gradient(90deg, #fff, #ff2a9d);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 2px;
+    }
+    .game-label .count-badge {
+      background: transparent; border: none;
+      color: #ff2a9d; font-size: 12px; font-weight: 600;
     }
 
     /* ---- NOTIFICATION (WELCOME) ---- */
     .welcome-notification {
-      position: fixed;
-      top: 80px; right: 20px;
-      background: rgba(17,7,31,0.95);
-      border: 1px solid #ff2a9d;
-      border-radius: 16px;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 0 20px #ff2a9d;
-      z-index: 300;
-      transform: translateX(150%);
-      transition: transform 0.4s ease;
+      position: fixed; top: 80px; right: 20px;
+      background: rgba(17,7,31,0.95); border: 1px solid #ff2a9d;
+      border-radius: 16px; padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 0 20px #ff2a9d; z-index: 300;
+      transform: translateX(150%); transition: transform 0.4s ease;
     }
     .welcome-notification.show { transform: translateX(0); }
     .welcome-notification img {
-      width: 42px; height: 42px;
-      border-radius: 50%; object-fit: cover;
+      width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
       border: 2px solid #ff2a9d;
     }
     .welcome-notification strong { color: #ff2a9d; }
 
-    /* ---- FULL-PAGE DETAIL VIEW (when game selected) ---- */
+    /* ---- FULL-PAGE DETAIL VIEW (simpler header) ---- */
     .game-detail-fullpage {
-      max-width: 1200px;
-      margin: 20px auto;
-      padding: 0 20px;
-      display: none;
+      max-width: 1200px; margin: 20px auto; padding: 0 20px; display: none;
     }
     .game-detail-fullpage.active { display: block; }
 
-    /* GAME HEADER BOX – Image as cover, name floating */
     .detail-header-box {
-      position: relative;
-      border-radius: 16px;
-      margin: 30px 0 20px;
-      height: 220px;
-      background-size: cover;
-      background-position: center;
+      background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+      border: 1px solid #8b5cf6; border-radius: 16px;
+      padding: 24px; margin: 30px 0 20px;
       box-shadow: 0 0 20px rgba(139,92,246,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
-    .detail-header-box .overlay {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(17,7,31,0.65);
-      border-radius: 16px;
+    .detail-header { display: flex; align-items: center; gap: 20px; }
+    .detail-header img {
+      width: 80px; height: 80px; object-fit: contain;
+      filter: drop-shadow(0 0 10px #ff2a9d);
     }
-    /* Floating name label with animated border */
-    .game-name-label {
-      position: relative;
-      z-index: 2;
-      padding: 16px 32px;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(4px);
-      border-radius: 50px;
-      text-align: center;
-      /* Animated border using conic-gradient mask */
-      --border-width: 2px;
-      border: var(--border-width) solid transparent;
-      background-origin: border-box;
-      background-clip: padding-box, border-box;
-      background-image: 
-        linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
-        conic-gradient(from 0deg, #ff2a9d, #fff, #ff2a9d, #fff, #ff2a9d);
-      animation: borderSpin 3s linear infinite;
-    }
-    @keyframes borderSpin {
-      from { --angle: 0deg; }
-      to { --angle: 360deg; }
-    }
-    /* Fallback for conic-gradient (simple glow) */
-    .game-name-label h1 {
+    .detail-header h1 {
       font-size: 36px;
       background: linear-gradient(to right, #fff, #ff2a9d);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 4px;
-      text-shadow: none;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .product-count-badge {
-      font-size: 18px;
-      color: #ff2a9d;
-      font-weight: 600;
-    }
+    .product-count-badge { margin-left: 10px; font-size: 20px; color: #ff2a9d; font-weight: 600; }
 
-    /* Catalog content: categories left, products right */
-    .catalog-content {
-      display: flex;
-      gap: 20px;
-    }
-    .category-sidebar {
-      width: 180px;
-      flex-shrink: 0;
-    }
-    .category-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .category-list .btn {
-      text-align: left;
-      width: 100%;
-    }
+    .catalog-content { display: flex; gap: 20px; }
+    .category-sidebar { width: 180px; flex-shrink: 0; }
+    .category-list { display: flex; flex-direction: column; gap: 8px; }
+    .category-list .btn { text-align: left; width: 100%; }
     .products-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
-      margin-bottom: 40px;
-      flex: 1;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px; margin-bottom: 40px; flex: 1;
     }
     .product-card {
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(139,92,246,0.3);
-      border-radius: 16px;
-      padding: 16px;
-      text-align: center;
-      transition: 0.2s;
+      background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+      border: 1px solid rgba(139,92,246,0.3); border-radius: 16px;
+      padding: 16px; text-align: center; transition: 0.2s;
       box-shadow: 0 0 15px rgba(139,92,246,0.2);
     }
-    .product-card:hover {
-      border-color: #ff2a9d;
-      transform: translateY(-6px);
-      box-shadow: 0 0 25px #ff2a9d;
-    }
+    .product-card:hover { border-color: #ff2a9d; transform: translateY(-6px); box-shadow: 0 0 25px #ff2a9d; }
     .product-image { height: 140px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
-    .product-image img {
-      max-height: 100%; max-width: 100%; object-fit: contain;
-      filter: drop-shadow(0 0 8px #ff2a9d);
-    }
+    .product-image img { max-height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0 0 8px #ff2a9d); }
     .product-name { font-weight: 600; font-size: 18px; margin: 8px 0; }
-    /* ---- FLAT PRICE BADGE (no glow) ---- */
     .price-badge {
-      display: inline-block;
-      background: #ff2a9d;
-      color: #fff;
-      border-radius: 20px;
-      padding: 6px 18px;
-      font-weight: 700;
-      font-size: 16px;
+      display: inline-block; background: #ff2a9d; color: #fff;
+      border-radius: 20px; padding: 6px 18px; font-weight: 700; font-size: 16px;
     }
     .product-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: center; }
 
     /* ---- ACCOUNT & WISHLIST PAGES ---- */
     .page-section { display: none; }
     .page-section.active { display: block; }
-
     .user-profile {
       background: rgba(255,255,255,0.05); border: 1px solid #8b5cf6;
       border-radius: 16px; padding: 20px; margin: 20px 0;
       display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
     }
-    .profile-avatar {
-      width: 64px; height: 64px; border-radius: 50%; object-fit: cover;
-      border: 2px solid #ff2a9d;
-    }
+    .profile-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #ff2a9d; }
     .order-card, .wishlist-item {
       background: rgba(255,255,255,0.05); border: 1px solid #8b5cf6;
       border-radius: 12px; padding: 16px; margin-bottom: 12px;
     }
 
-    /* ---- MODAL ---- */
     .modal {
       position: fixed; top:0; left:0; right:0; bottom:0;
       background: rgba(0,0,0,0.8); display: none;
@@ -455,65 +299,37 @@
     }
     .close-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
 
-    /* ---- SMALL FOOTER ---- */
     footer {
-      background: rgba(17,7,31,0.8);
-      border-top: 1px solid #8b5cf6;
-      padding: 8px 20px;
-      text-align: center;
-      margin-top: 10px;
-      font-size: 10px;
-      color: #8b5cf6;
+      background: rgba(17,7,31,0.8); border-top: 1px solid #8b5cf6;
+      padding: 8px 20px; text-align: center; margin-top: 10px; font-size: 10px; color: #8b5cf6;
     }
 
-    /* ==================== MOBILE RESPONSIVE (like desktop) ==================== */
+    /* ==================== MOBILE ==================== */
     @media (max-width: 768px) {
       .cursor-aura { display: none !important; }
-
-      .overview-layout {
-        flex-direction: row;
-        padding: 0 10px;
-        gap: 10px;
-      }
-      .sidebar {
-        width: 200px;
-        position: sticky;
-        top: 100px;
-        padding: 15px;
-        margin-bottom: 0;
-      }
+      .overview-layout { flex-direction: row; padding: 0 10px; gap: 10px; }
+      .sidebar { width: 200px; position: sticky; top: 100px; padding: 15px; margin-bottom: 0; }
       .sidebar h3 { font-size: 18px; }
       .game-card { padding: 8px; gap: 8px; }
       .game-card img { width: 32px; height: 32px; }
       .game-card .game-name { font-size: 13px; }
       .count-badge { font-size: 10px; padding: 2px 6px; }
-
       .navbar { padding: 10px 15px; flex-direction: column; align-items: stretch; }
       .nav-left { flex-direction: column; align-items: flex-start; gap: 10px; }
       .nav-links { flex-wrap: wrap; gap: 10px; }
       .search-bar { width: 100%; }
-
       .hero-rect { padding: 20px; }
       .hero-rect h1 { font-size: 28px; }
       .hero-rect p { font-size: 14px; }
-
-      .games-overview { flex-direction: row; flex-wrap: wrap; gap: 10px; }
-      .game-overview-card {
-        width: calc(50% - 10px);
-        padding: 16px;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-      }
-      .game-overview-card img { width: 60px; height: 60px; margin-bottom: 8px; }
-      .game-overview-card .game-name { font-size: 14px; margin: 4px 0; }
-      .game-overview-card .count-badge { position: static; margin-left: 0; margin-top: 4px; }
-
-      .detail-header-box { height: 180px; }
-      .game-name-label { padding: 12px 24px; }
-      .game-name-label h1 { font-size: 28px; }
+      .games-overview { gap: 15px; }
+      .game-cover-card { width: calc(50% - 10px); height: 150px; }
+      .game-label { padding: 6px 14px; }
+      .game-label .game-name { font-size: 16px; }
+      .detail-header-box { padding: 16px; }
+      .detail-header { flex-direction: row; align-items: center; }
+      .detail-header img { width: 60px; height: 60px; }
+      .detail-header h1 { font-size: 24px; }
       .product-count-badge { font-size: 16px; }
-
       .catalog-content { flex-direction: row; gap: 10px; }
       .category-sidebar { width: 120px; flex-shrink: 0; }
       .category-list { flex-direction: column; }
@@ -522,7 +338,6 @@
       .product-card { padding: 12px; }
       .product-name { font-size: 14px; }
       .price-badge { font-size: 14px; padding: 4px 12px; }
-
       .modal-content { width: 100%; }
     }
 
@@ -531,17 +346,16 @@
       .game-card { padding: 6px; gap: 6px; }
       .game-card img { width: 28px; height: 28px; }
       .game-card .game-name { font-size: 12px; }
-      .count-badge { font-size: 10px; padding: 2px 6px; }
       .hero-rect h1 { font-size: 24px; }
       .badge { font-size: 10px; padding: 4px 12px; }
-      .game-overview-card { width: 100%; }
+      .game-cover-card { width: 100%; height: 140px; }
       .category-sidebar { width: 100px; }
       .products-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
     }
   </style>
 </head>
 <body>
-  <!-- AURA ELEMENT (hidden on mobile via CSS) -->
+  <!-- AURA ELEMENT -->
   <div class="cursor-aura" id="cursorAura"></div>
 
   <!-- NAVIGATION -->
@@ -565,7 +379,7 @@
     </div>
   </header>
 
-  <!-- WELCOME NOTIFICATION (pop-out) -->
+  <!-- WELCOME NOTIFICATION -->
   <div id="welcomeNotification" class="welcome-notification">
     <img id="welcomeNotifAvatar" src="" alt="Avatar" style="display:none;">
     <div>
@@ -575,7 +389,7 @@
 
   <!-- HOME PAGE -->
   <div id="homePage" class="page-section active">
-    <!-- OVERVIEW LAYOUT (sidebar + hero + overview cards) – visible when no game selected -->
+    <!-- OVERVIEW LAYOUT -->
     <div id="overviewLayout" class="overview-layout">
       <aside class="sidebar">
         <h3>🎮 Game Catalog</h3>
@@ -600,7 +414,7 @@
       </div>
     </div>
 
-    <!-- FULL-PAGE DETAIL VIEW (shown when a game is selected) -->
+    <!-- GAME DETAIL VIEW -->
     <div id="gameDetailFullpage" class="game-detail-fullpage"></div>
   </div>
 
@@ -642,13 +456,11 @@
     </div>
   </div>
 
-  <!-- SMALL FOOTER -->
-  <footer>
-    © Xyoo Shop
-  </footer>
+  <!-- FOOTER -->
+  <footer>© Xyoo Shop</footer>
 
   <script>
-    // ---------- AURA CURSOR (only run if visible) ----------
+    // ---------- AURA CURSOR ----------
     const aura = document.getElementById('cursorAura');
     if (window.innerWidth > 768) {
       let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2, curX = mouseX, curY = mouseY;
@@ -770,25 +582,24 @@
       `).join('');
     }
 
+    // NEW: Overview cards with full image and floating label
     function renderGamesOverview() {
       const overview = document.getElementById('gamesOverview');
       overview.innerHTML = games.map(g => `
-        <div class="game-overview-card" onclick="selectGame('${g.name.replace(/'/g, "\\'")}')">
-          <img src="${g.image}" alt="${g.name}">
-          <div class="game-name">${g.name}</div>
-          <span class="count-badge">${g.productCount}</span>
+        <div class="game-cover-card" style="background-image: url('${g.image}');" onclick="selectGame('${g.name.replace(/'/g, "\\'")}')">
+          <div class="overlay"></div>
+          <div class="game-label">
+            <div class="game-name">${g.name}</div>
+            <div class="count-badge">${g.productCount} products</div>
+          </div>
         </div>
       `).join('');
     }
 
-    // ---------- RENDER PRODUCT GRID ----------
     function renderProductGrid(products) {
       const grid = document.getElementById('productsGrid');
       if (!grid) return;
-      if (!products.length) {
-        grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No products found.</p>';
-        return;
-      }
+      if (!products.length) { grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No products found.</p>'; return; }
       grid.innerHTML = products.map(p => `
         <div class="product-card">
           <div class="product-image"><img src="/static/${p.image}" alt="${p.name}"></div>
@@ -802,21 +613,15 @@
       `).join('');
     }
 
-    // ---------- SEARCH HANDLER ----------
     window.handleSearch = function(query) {
       if (!window.selectedGame) return;
       const q = query.toLowerCase().trim();
       let filtered = window.selectedGame.products;
-      if (q) {
-        filtered = filtered.filter(p => p.name.toLowerCase().includes(q));
-      }
-      if (selectedCategory !== 'All') {
-        filtered = filtered.filter(p => p.category === selectedCategory);
-      }
+      if (q) filtered = filtered.filter(p => p.name.toLowerCase().includes(q));
+      if (selectedCategory !== 'All') filtered = filtered.filter(p => p.category === selectedCategory);
       renderProductGrid(filtered);
     };
 
-    // ---------- SHOW GAME DETAIL (new header with background image) ----------
     function showGameDetail(game) {
       document.getElementById('overviewLayout').style.display = 'none';
       const fullpage = document.getElementById('gameDetailFullpage');
@@ -833,21 +638,18 @@
 
       const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
       let filteredProducts = products;
-      if (searchVal) {
-        filteredProducts = filteredProducts.filter(p => p.name.toLowerCase().includes(searchVal));
-      }
-      if (selectedCategory !== 'All') {
-        filteredProducts = filteredProducts.filter(p => p.category === selectedCategory);
-      }
+      if (searchVal) filteredProducts = filteredProducts.filter(p => p.name.toLowerCase().includes(searchVal));
+      if (selectedCategory !== 'All') filteredProducts = filteredProducts.filter(p => p.category === selectedCategory);
 
       container.innerHTML = `
         <button class="btn" onclick="goBackToOverview()" style="margin-bottom:15px;">← Back to Catalog</button>
-        <!-- Game header with image as background -->
-        <div class="detail-header-box" style="background-image: url('${game.image}');">
-          <div class="overlay"></div>
-          <div class="game-name-label">
-            <h1>${game.name.toUpperCase()}</h1>
-            <span class="product-count-badge">${game.productCount} products</span>
+        <div class="detail-header-box">
+          <div class="detail-header">
+            <img src="${game.image}" alt="${game.name}">
+            <div>
+              <h1>${game.name.toUpperCase()}</h1>
+              <span class="product-count-badge">${game.productCount} products</span>
+            </div>
           </div>
         </div>
         <div class="catalog-content">
@@ -873,9 +675,7 @@
 
     window.selectCategoryInDetail = function(cat) {
       selectedCategory = cat;
-      if (window.selectedGame) {
-        buildGameDetailView(window.selectedGame, document.getElementById('gameDetailFullpage'));
-      }
+      if (window.selectedGame) buildGameDetailView(window.selectedGame, document.getElementById('gameDetailFullpage'));
     };
 
     window.selectGame = function(gameName) {
@@ -895,7 +695,7 @@
       renderGameList();
     };
 
-    // ---------- CART (unchanged) ----------
+    // ---------- CART ----------
     function saveCart() { localStorage.setItem('xyoo_cart', JSON.stringify(window.cart)); updateCartCount(); }
     function updateCartCount() {
       const total = window.cart.reduce((s,i) => s + i.quantity, 0);
@@ -1039,7 +839,7 @@
       window.location.href = redirect;
     };
 
-    // ---------- WISHLIST (unchanged) ----------
+    // ---------- WISHLIST ----------
     window.toggleWishlist = function(id) {
       const idx = window.wishlist.indexOf(id);
       if (idx > -1) window.wishlist.splice(idx, 1);
