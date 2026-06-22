@@ -352,6 +352,32 @@
       padding: 8px 20px; text-align: center; margin-top: 10px; font-size: 10px; color: #888;
     }
 
+    /* ========== SUPPORT CHAT WIDGET (right side) ========== */
+    #supportBtn {
+      position: fixed; bottom: 20px; right: 20px; z-index: 500;
+      background: #ff2a9d; color: #fff; border: none; border-radius: 50%;
+      width: 56px; height: 56px; font-size: 24px; cursor: pointer;
+      box-shadow: 0 0 20px #ff2a9d; display: flex; align-items: center; justify-content: center;
+    }
+    #supportModal {
+      display: none; position: fixed; bottom: 90px; right: 20px;
+      width: 320px; max-height: 400px; background: #1a1a2e;
+      border: 1px solid #8b5cf6; border-radius: 16px;
+      box-shadow: 0 0 20px rgba(139,92,246,0.5); z-index: 600;
+      overflow: hidden; flex-direction: column;
+    }
+    #supportMessages {
+      flex: 1; padding: 10px; overflow-y: auto; max-height: 250px;
+    }
+    #supportInput {
+      flex: 1; background: #0a0a0a; border: 1px solid #555; color: #fff;
+      border-radius: 20px; padding: 8px 14px; outline: none;
+    }
+    #sendSupport {
+      background: #ff2a9d; border: none; color: #fff;
+      border-radius: 20px; padding: 8px 16px; cursor: pointer;
+    }
+
     @media (max-width: 768px) {
       .cursor-aura { display: none !important; }
       .overview-layout { flex-direction: row; padding: 0 10px; gap: 10px; }
@@ -421,8 +447,8 @@
               <span class="badge">💰 BEST PRICES</span>
               <span class="badge">🛡️ 24/7 SUPPORT</span>
             </div>
-            <!-- DM Owner link -->
-            <a class="badge support-badge" href="https://discord.com/users/592402229978333331" target="_blank">💬 DM Owner</a>
+            <!-- Support badge opens chat -->
+            <a class="badge support-badge" onclick="openSupportChat()" style="cursor:pointer;">💬 Support</a>
           </div>
         </div>
 
@@ -470,6 +496,24 @@
         <button class="close-btn" onclick="toggleCart()">✕</button>
       </div>
       <div id="cartView"></div>
+    </div>
+  </div>
+
+  <!-- FLOATING SUPPORT BUTTON (right side) -->
+  <button id="supportBtn" onclick="openSupportChat()">💬</button>
+
+  <!-- SUPPORT CHAT MODAL -->
+  <div id="supportModal">
+    <div style="padding:12px; background:rgba(0,0,0,0.8); display:flex; justify-content:space-between; align-items:center;">
+      <strong>💬 Support</strong>
+      <button id="closeSupport" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+    </div>
+    <div id="supportMessages">
+      <div style="color:#aaa; text-align:center;">How can we help? Type your message below.</div>
+    </div>
+    <div style="padding:10px; border-top:1px solid #8b5cf6; display:flex; gap:8px;">
+      <input type="text" id="supportInput" placeholder="Type a message...">
+      <button id="sendSupport">Send</button>
     </div>
   </div>
 
@@ -926,6 +970,89 @@
       document.getElementById('cartModal').classList.toggle('active');
       if (document.getElementById('cartModal').classList.contains('active')) updateCartView();
     };
+
+    // ========== SUPPORT CHAT (right side) ==========
+    function openSupportChat() {
+      document.getElementById('supportModal').style.display = 'flex';
+      if (!window.supportPolling) startSupportPolling();
+    }
+
+    (function() {
+      const supportModal = document.getElementById('supportModal');
+      const closeSupport = document.getElementById('closeSupport');
+      const supportMessages = document.getElementById('supportMessages');
+      const supportInput = document.getElementById('supportInput');
+      const sendSupport = document.getElementById('sendSupport');
+
+      let sessionId = localStorage.getItem('xyoo_support_session');
+      if (!sessionId) {
+        sessionId = 'sess-' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('xyoo_support_session', sessionId);
+      }
+
+      window.supportPolling = null;
+      window.startSupportPolling = function() {
+        async function pollMessages() {
+          try {
+            const res = await fetch(`/api/support/messages/${sessionId}`);
+            if (!res.ok) return;
+            const messages = await res.json();
+            renderMessages(messages);
+          } catch (e) {}
+        }
+        pollMessages();
+        window.supportPolling = setInterval(pollMessages, 2000);
+      };
+
+      function renderMessages(msgs) {
+        let html = '';
+        if (msgs.length === 0) {
+          html = '<div style="color:#aaa; text-align:center;">How can we help? Type your message below.</div>';
+        } else {
+          msgs.forEach(m => {
+            if (m.from === 'user') {
+              html += `<div style="text-align:right; margin:6px 0;"><span style="background:#ff2a9d; color:#fff; padding:6px 12px; border-radius:16px; display:inline-block; max-width:80%;">${escapeHtml(m.text)}</span></div>`;
+            } else {
+              html += `<div style="text-align:left; margin:6px 0;"><span style="background:#8b5cf6; color:#fff; padding:6px 12px; border-radius:16px; display:inline-block; max-width:80%;">${escapeHtml(m.text)}</span></div>`;
+            }
+          });
+        }
+        supportMessages.innerHTML = html;
+        supportMessages.scrollTop = supportMessages.scrollHeight;
+      }
+
+      function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+      }
+
+      closeSupport.addEventListener('click', () => {
+        supportModal.style.display = 'none';
+        if (window.supportPolling) { clearInterval(window.supportPolling); window.supportPolling = null; }
+      });
+
+      sendSupport.addEventListener('click', async () => {
+        const msg = supportInput.value.trim();
+        if (!msg) return;
+        supportInput.value = '';
+        supportMessages.innerHTML += `<div style="text-align:right; margin:6px 0;"><span style="background:#ff2a9d; color:#fff; padding:6px 12px; border-radius:16px; display:inline-block; max-width:80%;">${escapeHtml(msg)}</span></div>`;
+        supportMessages.scrollTop = supportMessages.scrollHeight;
+
+        try {
+          await fetch('/api/support/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+            body: JSON.stringify({ session_id: sessionId, message: msg })
+          });
+        } catch (e) {
+          console.error('Failed to send support message:', e);
+        }
+      });
+
+      supportInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendSupport.click();
+      });
+    })();
 
     // ---------- STARTUP ----------
     async function init() {

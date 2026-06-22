@@ -34,35 +34,37 @@ app = cors(app, allow_origin="*")
 
 CONFIG_FILE = "bot_config.json"
 
-# ========== UPDATED DEFAULT PRODUCTS (Moon Bloom image = mb.png) ==========
+# ---- SUPPORT CHAT STORAGE ----
+support_sessions = {}   # session_id -> list of {"from": "user"/"admin", "text": "..."}
+
+# ========== UPDATED DEFAULT PRODUCTS (simplified categories) ==========
 DEFAULT_PRODUCTS = [
-    # Exclusives
-    {"id": 1,  "name": "Moon Bloom Seed (1x)",      "image": "mb.png",         "price": 7.00,  "category": "Exclusive"},
-    {"id": 2,  "name": "Ghost Pepper Seed (1x)",    "image": "gpepper.png",    "price": 3.00,  "category": "Exclusive"},
-    {"id": 3,  "name": "Ghost Pepper Seed (5x)",    "image": "gpepper.png",    "price": 10.00, "category": "Exclusive"},
-    {"id": 4,  "name": "Ghost Pepper Seed (10x)",   "image": "gpepper.png",    "price": 15.00, "category": "Exclusive"},
-    {"id": 5,  "name": "Dragon Breath Seed (1x)",   "image": "dbreath.png",    "price": 4.00,  "category": "Exclusive"},
-    {"id": 6,  "name": "Dragon Breath Seed (5x)",   "image": "dbreath.png",    "price": 12.00, "category": "Exclusive"},
-    {"id": 7,  "name": "Dragon Breath Seed (10x)",  "image": "dbreath.png",    "price": 20.00, "category": "Exclusive"},
-    # Normal
-    {"id": 8,  "name": "Bamboo Seed (1k)",          "image": "placeholder.png", "price": 3.00,  "category": "Normal"},
-    {"id": 9,  "name": "Mushroom Seed (100)",       "image": "placeholder.png", "price": 3.00,  "category": "Normal"},
-    # Rainbow
-    {"id": 10, "name": "Rainbow Seed (50)",         "image": "rbseed.png",     "price": 5.00,  "category": "Rainbow"},
-    {"id": 11, "name": "Rainbow Seed (100)",        "image": "rbseed.png",     "price": 9.00,  "category": "Rainbow"},
-    # Golden
-    {"id": 12, "name": "Golden Seed (50)",          "image": "gseed.png",      "price": 3.00,  "category": "Golden"},
-    {"id": 13, "name": "Golden Seed (100)",         "image": "gseed.png",      "price": 5.00,  "category": "Golden"},
-    # Gear
-    {"id": 14, "name": "Super Sprinkler (10)",      "image": "placeholder.png", "price": 4.00,  "category": "Gear"},
-    {"id": 15, "name": "Super Watering Can (10)",   "image": "placeholder.png", "price": 4.00,  "category": "Gear"},
-    {"id": 16, "name": "Legendary Sprinkler (10)",  "image": "placeholder.png", "price": 2.00,  "category": "Gear"},
+    # Seeds (all seed variants)
+    {"id": 1,  "name": "Moon Bloom Seed (1x)",      "image": "mb.png",         "price": 7.00,  "category": "Seed"},
+    {"id": 2,  "name": "Ghost Pepper Seed (1x)",    "image": "gpepper.png",    "price": 3.00,  "category": "Seed"},
+    {"id": 3,  "name": "Ghost Pepper Seed (5x)",    "image": "gpepper.png",    "price": 10.00, "category": "Seed"},
+    {"id": 4,  "name": "Ghost Pepper Seed (10x)",   "image": "gpepper.png",    "price": 15.00, "category": "Seed"},
+    {"id": 5,  "name": "Dragon Breath Seed (1x)",   "image": "dbreath.png",    "price": 4.00,  "category": "Seed"},
+    {"id": 6,  "name": "Dragon Breath Seed (5x)",   "image": "dbreath.png",    "price": 12.00, "category": "Seed"},
+    {"id": 7,  "name": "Dragon Breath Seed (10x)",  "image": "dbreath.png",    "price": 20.00, "category": "Seed"},
+    {"id": 8,  "name": "Bamboo Seed (1k)",          "image": "placeholder.png", "price": 3.00,  "category": "Seed"},
+    {"id": 9,  "name": "Mushroom Seed (100)",       "image": "placeholder.png", "price": 3.00,  "category": "Seed"},
+    {"id": 10, "name": "Rainbow Seed (50)",         "image": "rbseed.png",     "price": 5.00,  "category": "Seed"},
+    {"id": 11, "name": "Rainbow Seed (100)",        "image": "rbseed.png",     "price": 9.00,  "category": "Seed"},
+    {"id": 12, "name": "Golden Seed (50)",          "image": "gseed.png",      "price": 3.00,  "category": "Seed"},
+    {"id": 13, "name": "Golden Seed (100)",         "image": "gseed.png",      "price": 5.00,  "category": "Seed"},
+    # Gardening tools (classified as Seed)
+    {"id": 14, "name": "Super Sprinkler (10)",      "image": "placeholder.png", "price": 4.00,  "category": "Seed"},
+    {"id": 15, "name": "Super Watering Can (10)",   "image": "placeholder.png", "price": 4.00,  "category": "Seed"},
+    {"id": 16, "name": "Legendary Sprinkler (10)",  "image": "placeholder.png", "price": 2.00,  "category": "Seed"},
     # Pets
-    {"id": 17, "name": "Bear",                      "image": "bear.png",       "price": 3.00,  "category": "Pets"},
-    {"id": 18, "name": "Dragonfly",                 "image": "df.png",         "price": 3.00,  "category": "Pets"},
-    {"id": 19, "name": "Unicorn",                   "image": "uni.png",        "price": 4.00,  "category": "Pets"},
-    {"id": 20, "name": "Raccoon",                   "image": "racc.png",       "price": 10.00, "category": "Pets"},
-    {"id": 21, "name": "Ice Serpent",               "image": "is.png",         "price": 28.00, "category": "Pets"},
+    {"id": 17, "name": "Bear",                      "image": "bear.png",       "price": 3.00,  "category": "Pet"},
+    {"id": 18, "name": "Dragonfly",                 "image": "df.png",         "price": 3.00,  "category": "Pet"},
+    {"id": 19, "name": "Unicorn",                   "image": "uni.png",        "price": 4.00,  "category": "Pet"},
+    {"id": 20, "name": "Raccoon",                   "image": "racc.png",       "price": 10.00, "category": "Pet"},
+    {"id": 21, "name": "Ice Serpent",               "image": "is.png",         "price": 28.00, "category": "Pet"},
+    # Currency
+    {"id": 22, "name": "1M Sheckles",               "image": "sheckles.png",   "price": 1.99,  "category": "Currency"},
 ]
 
 def load_config():
@@ -104,6 +106,7 @@ class XyooBot(commands.Bot):
         self.tree.add_command(setprice_command)
         self.tree.add_command(addproduct_command)
         self.tree.add_command(removeitem_command)
+        self.tree.add_command(reply_command)          # Support reply command
 
         if os.getenv('SYNC_COMMANDS', 'false').lower() == 'true':
             await self.tree.sync()
@@ -115,7 +118,7 @@ class XyooBot(commands.Bot):
 
 bot = XyooBot()
 
-# ================== EMBED TEMPLATES ==================
+# ================== EMBED TEMPLATES (unchanged) ==================
 def get_main_embed():
     embed = discord.Embed(
         title="🤖 Xyoo Assistant",
@@ -199,7 +202,7 @@ def get_close_embed():
     embed.set_footer(text="Xyoo Shop • Thread closed")
     return embed
 
-# ================== UI COMPONENTS ==================
+# ================== UI COMPONENTS (unchanged) ==================
 class XyooSelect(discord.ui.Select):
     def __init__(self):
         options = [
@@ -355,7 +358,7 @@ async def setprice_command(interaction: discord.Interaction, item: str, price: f
 
 @app_commands.command(name="addproduct", description="[Admin] Add a new product (attach the image)")
 @app_commands.default_permissions(administrator=True)
-@app_commands.describe(name="Product name", price="Price in USD", category="Category (e.g. Exclusive, Gear)", image="Attach the product image (PNG/JPG)")
+@app_commands.describe(name="Product name", price="Price in USD", category="Category (e.g. Seed, Pet)", image="Attach the product image (PNG/JPG)")
 async def addproduct_command(interaction: discord.Interaction, name: str, price: float, category: str, image: discord.Attachment):
     if price < 0:
         await interaction.response.send_message("❌ Price cannot be negative.", ephemeral=True)
@@ -393,6 +396,17 @@ async def removeitem_command(interaction: discord.Interaction, item: str):
             await interaction.response.send_message(f"🗑️ Removed **{item}** from the shop.", ephemeral=True)
             return
     await interaction.response.send_message(f"❌ Product **{item}** not found.", ephemeral=True)
+
+# ---------- SUPPORT REPLY ----------
+@app_commands.command(name="reply", description="[Admin] Reply to a support chat session")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(session="Session ID (shown in the DM)", message="Your reply text")
+async def reply_command(interaction: discord.Interaction, session: str, message: str):
+    if session not in support_sessions:
+        await interaction.response.send_message("❌ Unknown session ID.", ephemeral=True)
+        return
+    support_sessions[session].append({"from": "admin", "text": message})
+    await interaction.response.send_message(f"✅ Reply sent to session `{session}`.", ephemeral=True)
 
 @bot.command(name="sync")
 @commands.is_owner()
@@ -522,6 +536,41 @@ async def save_user_order():
     user_orders.append(order_copy)
     save_config(bot.config)
     return jsonify({"status": "ok"}), 201
+
+# ---------- SUPPORT CHAT API ----------
+@app.route('/api/support/send', methods=['POST'])
+async def support_send():
+    if request.headers.get('X-API-Key') != API_KEY:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = await request.get_json()
+    session_id = data.get('session_id')
+    user_message = data.get('message')
+    if not session_id or not user_message:
+        return jsonify({"error": "Missing session_id or message"}), 400
+
+    if session_id not in support_sessions:
+        support_sessions[session_id] = []
+    support_sessions[session_id].append({"from": "user", "text": user_message})
+
+    support_user = bot.get_user(SUPPORT_USER_ID)
+    if support_user:
+        try:
+            embed = discord.Embed(
+                title="💬 New Support Message",
+                description=f"**Session:** `{session_id}`\n**Message:** {user_message}",
+                color=EMBED_COLOR
+            )
+            embed.set_footer(text="Reply with /reply session:<id> message:<text>")
+            await support_user.send(embed=embed)
+        except Exception as e:
+            logger.error(f"Failed to DM support user: {e}")
+
+    return jsonify({"status": "ok"}), 200
+
+@app.route('/api/support/messages/<session_id>', methods=['GET'])
+async def support_messages(session_id):
+    msgs = support_sessions.get(session_id, [])
+    return jsonify(msgs)
 
 @app.route('/api/order', methods=['POST'])
 async def receive_order():
