@@ -41,12 +41,12 @@ support_sessions = {}   # session_id -> list of {"from": "user"/"admin", "text":
 DEFAULT_PRODUCTS = [
     # Seeds
     {"id": 1,  "name": "Moon Bloom Seed (1x)",      "image": "mb.png",         "price": 7.00,  "category": "Seed"},
-    {"id": 2,  "name": "Ghost Pepper Seed (1x)",    "image": "gpepper.png",    "price": 3.00,  "category": "Seed"},
-    {"id": 3,  "name": "Ghost Pepper Seed (5x)",    "image": "gpepper.png",    "price": 10.00, "category": "Seed"},
-    {"id": 4,  "name": "Ghost Pepper Seed (10x)",   "image": "gpepper.png",    "price": 15.00, "category": "Seed"},
-    {"id": 5,  "name": "Dragon Breath Seed (1x)",   "image": "dbreath.png",    "price": 4.00,  "category": "Seed"},
-    {"id": 6,  "name": "Dragon Breath Seed (5x)",   "image": "dbreath.png",    "price": 12.00, "category": "Seed"},
-    {"id": 7,  "name": "Dragon Breath Seed (10x)",  "image": "dbreath.png",    "price": 20.00, "category": "Seed"},
+    {"id": 2,  "name": "Ghost Pepper Seed (1x)",    "image": "gpeppers.png",    "price": 3.00,  "category": "Seed"},
+    {"id": 3,  "name": "Ghost Pepper Seed (5x)",    "image": "gpeppers.png",    "price": 10.00, "category": "Seed"},
+    {"id": 4,  "name": "Ghost Pepper Seed (10x)",   "image": "gpeppers.png",    "price": 15.00, "category": "Seed"},
+    {"id": 5,  "name": "Dragon Breath Seed (1x)",   "image": "dbreaths.png",    "price": 4.00,  "category": "Seed"},
+    {"id": 6,  "name": "Dragon Breath Seed (5x)",   "image": "dbreaths.png",    "price": 12.00, "category": "Seed"},
+    {"id": 7,  "name": "Dragon Breath Seed (10x)",  "image": "dbreaths.png",    "price": 20.00, "category": "Seed"},
     {"id": 8,  "name": "Bamboo Seed (1k)",          "image": "bb.png", "price": 3.00,  "category": "Seed"},
     {"id": 9,  "name": "Mushroom Seed (100)",       "image": "ms.png", "price": 3.00,  "category": "Seed"},
     {"id": 10, "name": "Rainbow Seed (50)",         "image": "rbseed.png",     "price": 5.00,  "category": "Seed"},
