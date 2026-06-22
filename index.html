@@ -309,11 +309,20 @@
     }
     .game-detail-fullpage.active { display: block; }
 
+    /* GAME HEADER BOX */
+    .detail-header-box {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid #8b5cf6;
+      border-radius: 16px;
+      padding: 24px;
+      margin: 30px 0 20px;
+      box-shadow: 0 0 20px rgba(139,92,246,0.3);
+    }
     .detail-header {
       display: flex;
       align-items: center;
       gap: 20px;
-      margin: 30px 0;
     }
     .detail-header img {
       width: 80px; height: 80px;
@@ -484,6 +493,7 @@
         margin-left: auto;
       }
 
+      .detail-header-box { padding: 16px; }
       .detail-header { flex-direction: column; align-items: flex-start; }
       .detail-header h1 { font-size: 28px; }
 
@@ -779,7 +789,6 @@
       if (q) {
         filtered = filtered.filter(p => p.name.toLowerCase().includes(q));
       }
-      // Also respect category filter
       if (selectedCategory !== 'All') {
         filtered = filtered.filter(p => p.category === selectedCategory);
       }
@@ -801,7 +810,6 @@
         <button class="btn ${c === selectedCategory ? 'btn-primary' : ''}" onclick="selectCategoryInDetail('${c}')">${c}</button>
       `).join('');
 
-      // Apply current search value
       const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
       let filteredProducts = products;
       if (searchVal) {
@@ -813,11 +821,13 @@
 
       container.innerHTML = `
         <button class="btn" onclick="goBackToOverview()" style="margin-bottom:15px;">← Back to Catalog</button>
-        <div class="detail-header">
-          <img src="${game.image}" alt="${game.name}">
-          <div>
-            <h1>${game.name.toUpperCase()}</h1>
-            <span class="product-count-badge">${game.productCount} products</span>
+        <div class="detail-header-box">
+          <div class="detail-header">
+            <img src="${game.image}" alt="${game.name}">
+            <div>
+              <h1>${game.name.toUpperCase()}</h1>
+              <span class="product-count-badge">${game.productCount} products</span>
+            </div>
           </div>
         </div>
         <div class="catalog-content">
@@ -844,7 +854,6 @@
     window.selectCategoryInDetail = function(cat) {
       selectedCategory = cat;
       if (window.selectedGame) {
-        // Rebuild detail view, keeping search value
         buildGameDetailView(window.selectedGame, document.getElementById('gameDetailFullpage'));
       }
     };
@@ -856,7 +865,6 @@
       selectedCategory = 'All';
       renderGameList();
       showGameDetail(game);
-      // Clear search input? Optionally leave it.
     };
 
     window.goBackToOverview = function() {
