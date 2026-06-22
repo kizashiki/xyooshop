@@ -34,10 +34,10 @@ app = cors(app, allow_origin="*")
 
 CONFIG_FILE = "bot_config.json"
 
-# ========== UPDATED DEFAULT PRODUCTS (prices + new items) ==========
+# ========== UPDATED DEFAULT PRODUCTS (Moon Bloom image = mb.png) ==========
 DEFAULT_PRODUCTS = [
     # Exclusives
-    {"id": 1,  "name": "Moon Bloom Seed (1x)",      "image": "placeholder.png", "price": 7.00,  "category": "Exclusive"},
+    {"id": 1,  "name": "Moon Bloom Seed (1x)",      "image": "mb.png",         "price": 7.00,  "category": "Exclusive"},
     {"id": 2,  "name": "Ghost Pepper Seed (1x)",    "image": "gpepper.png",    "price": 3.00,  "category": "Exclusive"},
     {"id": 3,  "name": "Ghost Pepper Seed (5x)",    "image": "gpepper.png",    "price": 10.00, "category": "Exclusive"},
     {"id": 4,  "name": "Ghost Pepper Seed (10x)",   "image": "gpepper.png",    "price": 15.00, "category": "Exclusive"},
@@ -64,9 +64,6 @@ DEFAULT_PRODUCTS = [
     {"id": 20, "name": "Raccoon",                   "image": "racc.png",       "price": 10.00, "category": "Pets"},
     {"id": 21, "name": "Ice Serpent",               "image": "is.png",         "price": 28.00, "category": "Pets"},
 ]
-
-# ---- SUPPORT CHAT STORAGE ----
-support_sessions = {}   # session_id -> list of {"from": "user"/"admin", "text": "..."}
 
 def load_config():
     try:
@@ -107,7 +104,6 @@ class XyooBot(commands.Bot):
         self.tree.add_command(setprice_command)
         self.tree.add_command(addproduct_command)
         self.tree.add_command(removeitem_command)
-        self.tree.add_command(reply_command)
 
         if os.getenv('SYNC_COMMANDS', 'false').lower() == 'true':
             await self.tree.sync()
@@ -203,7 +199,7 @@ def get_close_embed():
     embed.set_footer(text="Xyoo Shop • Thread closed")
     return embed
 
-# ================== UI COMPONENTS (unchanged) ==================
+# ================== UI COMPONENTS ==================
 class XyooSelect(discord.ui.Select):
     def __init__(self):
         options = [
@@ -398,17 +394,6 @@ async def removeitem_command(interaction: discord.Interaction, item: str):
             return
     await interaction.response.send_message(f"❌ Product **{item}** not found.", ephemeral=True)
 
-# ---------- SUPPORT REPLY ----------
-@app_commands.command(name="reply", description="[Admin] Reply to a support chat session")
-@app_commands.default_permissions(administrator=True)
-@app_commands.describe(session="Session ID (shown in the DM)", message="Your reply text")
-async def reply_command(interaction: discord.Interaction, session: str, message: str):
-    if session not in support_sessions:
-        await interaction.response.send_message("❌ Unknown session ID.", ephemeral=True)
-        return
-    support_sessions[session].append({"from": "admin", "text": message})
-    await interaction.response.send_message(f"✅ Reply sent to session `{session}`.", ephemeral=True)
-
 @bot.command(name="sync")
 @commands.is_owner()
 async def sync_commands(ctx):
@@ -537,41 +522,6 @@ async def save_user_order():
     user_orders.append(order_copy)
     save_config(bot.config)
     return jsonify({"status": "ok"}), 201
-
-# ---------- SUPPORT CHAT API ----------
-@app.route('/api/support/send', methods=['POST'])
-async def support_send():
-    if request.headers.get('X-API-Key') != API_KEY:
-        return jsonify({"error": "Unauthorized"}), 401
-    data = await request.get_json()
-    session_id = data.get('session_id')
-    user_message = data.get('message')
-    if not session_id or not user_message:
-        return jsonify({"error": "Missing session_id or message"}), 400
-
-    if session_id not in support_sessions:
-        support_sessions[session_id] = []
-    support_sessions[session_id].append({"from": "user", "text": user_message})
-
-    support_user = bot.get_user(SUPPORT_USER_ID)
-    if support_user:
-        try:
-            embed = discord.Embed(
-                title="💬 New Support Message",
-                description=f"**Session:** `{session_id}`\n**Message:** {user_message}",
-                color=EMBED_COLOR
-            )
-            embed.set_footer(text="Reply with /reply session:<id> message:<text>")
-            await support_user.send(embed=embed)
-        except Exception as e:
-            logger.error(f"Failed to DM support user: {e}")
-
-    return jsonify({"status": "ok"}), 200
-
-@app.route('/api/support/messages/<session_id>', methods=['GET'])
-async def support_messages(session_id):
-    msgs = support_sessions.get(session_id, [])
-    return jsonify(msgs)
 
 @app.route('/api/order', methods=['POST'])
 async def receive_order():
