@@ -68,7 +68,7 @@
 
     /* ---- HERO TITLE – Xyoo static pink, subtitle animated ---- */
     .brand-logo {
-      color: #ff2a9d;               /* solid hot pink, no animation */
+      color: #ff2a9d;
       text-shadow: 0 0 20px #ff2a9d, 0 0 40px #ff2a9d;
     }
     .brand-sub {
@@ -419,7 +419,7 @@
     </div>
     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
       <input type="text" class="search-bar" id="searchInput" placeholder="Search items..." oninput="handleSearch(this.value)">
-      <a href="https://discord.gg/fdNDgjpHpx" target="_blank" class="discord-btn">
+      <a href="https://discord.com/users/592402229978333331" target="_blank" class="discord-btn">
         <img src="/static/favicon.png" alt="Xyoo"> Discord
       </a>
       <button class="cart-btn" onclick="toggleCart()">
@@ -449,7 +449,6 @@
         <!-- CLASSIC HERO BOX with dark & white ribbon -->
         <div class="hero-rect">
           <div class="neon-ribbon"></div>
-          <!-- Updated title: Xyoo static pink, subtitle animated -->
           <h1><span class="brand-logo">Xyoo</span><span class="brand-sub"> - Roblox Shop</span></h1>
           <p>Roblox items, currency & bundles — Trusted · Secure · Fast delivery</p>
           <div class="hero-bottom">
@@ -864,6 +863,7 @@
       }
     };
 
+    // ---------- FIX: Save order to localStorage before redirect ----------
     window.completeOrder = async function() {
       const discordInput = document.getElementById('discordUserInput');
       const discordValue = discordInput ? discordInput.value.trim() : '';
@@ -882,13 +882,19 @@
         status: 'Pending Payment'
       };
 
+      // Save order to server (if user is logged in)
       const userId = getStoredUserId();
       if (userId) {
         await saveOrderToServer(order, userId);
-        window.orderHistory.push(order);
-      } else {
-        window.orderHistory.push(order);
       }
+      // Add to in-memory history (used by Account page)
+      window.orderHistory.push(order);
+
+      // *** NEW: Save to localStorage so the payment page can find it ***
+      let orders = JSON.parse(localStorage.getItem('xyoo_orders') || '[]');
+      orders.push(order);
+      localStorage.setItem('xyoo_orders', JSON.stringify(orders));
+
       renderOrderHistory();
       document.getElementById('totalOrders').textContent = window.orderHistory.length;
 
