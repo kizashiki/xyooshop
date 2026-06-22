@@ -222,6 +222,33 @@
       margin-right: 15px;
     }
 
+    /* ---- HERO RECTANGLE (classic brand box) ---- */
+    .hero-rect {
+      background: linear-gradient(135deg, rgba(255,42,157,0.2), rgba(139,92,246,0.15));
+      border: 1px solid #8b5cf6;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 20px;
+      text-align: left;
+      box-shadow: 0 0 20px rgba(139,92,246,0.3);
+    }
+    .hero-rect h1 {
+      font-size: 36px;
+      background: linear-gradient(to right, #fff, #ff2a9d);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .hero-rect p { color: #bbb; font-size: 18px; margin: 0 0 16px 0; }
+
+    .hero-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .hero-trust-badges { display: flex; flex-wrap: wrap; gap: 10px; }
+    .badge {
+      background: rgba(255,42,157,0.12); border: 1px solid #ff2a9d;
+      color: #ff2a9d; padding: 6px 16px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; text-transform: uppercase;
+    }
+    .support-badge { cursor: pointer; text-decoration: none; }
+
     /* ---- GAMES OVERVIEW (when no game selected) ---- */
     .games-overview {
       display: flex; flex-wrap: wrap; gap: 20px; margin: 20px 0;
@@ -371,6 +398,9 @@
       .poster-sub { font-size: 18px; }
       .poster-label { font-size: 18px; }
       .vert-divider { height: 30px; margin: 0 15px; }
+      .hero-rect { padding: 20px; }
+      .hero-rect h1 { font-size: 28px; }
+      .hero-rect p { font-size: 14px; }
       .games-overview { gap: 15px; }
       .game-cover-card { width: calc(50% - 10px); height: 150px; }
       .game-label { padding: 5px 14px; }
@@ -440,7 +470,7 @@
       </div>
     </section>
 
-    <!-- OVERVIEW LAYOUT -->
+    <!-- OVERVIEW LAYOUT (sidebar + hero box + game cards) -->
     <div id="overviewLayout" class="overview-layout">
       <aside class="sidebar">
         <h3>🎮 Game Catalog</h3>
@@ -448,6 +478,22 @@
       </aside>
 
       <div class="main-content">
+        <!-- CLASSIC HERO BOX -->
+        <div class="hero-rect">
+          <h1>Xyoo - Roblox Shop</h1>
+          <p>Roblox items, currency & bundles — Trusted · Secure · Fast delivery</p>
+          <div class="hero-bottom">
+            <div class="hero-trust-badges">
+              <span class="badge">100% SECURE</span>
+              <span class="badge">FAST DELIVERY</span>
+              <span class="badge">BEST PRICES</span>
+              <span class="badge">24/7 SUPPORT</span>
+            </div>
+            <a class="badge support-badge" href="https://discord.gg/xyoo" target="_blank">💬 Support</a>
+          </div>
+        </div>
+
+        <!-- GAME CARDS -->
         <div id="gamesOverview" class="games-overview"></div>
       </div>
     </div>
