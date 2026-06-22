@@ -192,12 +192,17 @@
       margin: 0 0 16px 0;
     }
 
-    /* Trust badges inside hero */
+    .hero-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
     .hero-trust-badges {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-top: 10px;
     }
     .badge {
       background: rgba(255,42,157,0.12);
@@ -208,6 +213,10 @@
       font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
+    }
+    .support-badge {
+      cursor: pointer;
+      text-decoration: none;
     }
 
     /* ---- GAMES OVERVIEW (when no game selected) ---- */
@@ -250,10 +259,6 @@
       -webkit-text-fill-color: transparent;
       animation: shine 2s linear infinite;
     }
-    .game-overview-card .product-count {
-      color: #ff2a9d;
-      font-size: 14px;
-    }
 
     /* ---- NOTIFICATION (WELCOME) ---- */
     .welcome-notification {
@@ -280,7 +285,13 @@
     .welcome-notification strong { color: #ff2a9d; }
 
     /* ---- CATEGORY TABS & PRODUCT GRID ---- */
-    .category-tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .category-tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      justify-content: flex-start;   /* left aligned */
+    }
     .catalog-title {
       font-size: 24px; margin-bottom: 20px;
       background: linear-gradient(to right, #fff, #ff2a9d);
@@ -348,10 +359,14 @@
 
     /* ---- FOOTER ---- */
     footer {
-      background: rgba(17,7,31,0.8); border-top: 1px solid #8b5cf6;
-      padding: 20px; text-align: center; margin-top: 40px;
+      background: rgba(17,7,31,0.8);
+      border-top: 1px solid #8b5cf6;
+      padding: 20px;
+      text-align: center;
+      margin-top: 40px;
+      font-size: 12px;
+      color: #8b5cf6;
     }
-    .online-dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; }
 
     @media (max-width: 768px) {
       .main-layout { flex-direction: column; }
@@ -407,15 +422,18 @@
 
       <!-- MAIN CONTENT -->
       <div class="main-content">
-        <!-- HERO RECTANGLE (left-aligned, with trust badges inside) -->
+        <!-- HERO RECTANGLE (left-aligned, with trust badges + support) -->
         <div class="hero-rect">
           <h1>Xyoo - Roblox Shop</h1>
           <p>Roblox items, currency & bundles — Trusted · Secure · Fast delivery</p>
-          <div class="hero-trust-badges">
-            <span class="badge">100% SECURE</span>
-            <span class="badge">FAST DELIVERY</span>
-            <span class="badge">BEST PRICES</span>
-            <span class="badge">24/7 SUPPORT</span>
+          <div class="hero-bottom">
+            <div class="hero-trust-badges">
+              <span class="badge">100% SECURE</span>
+              <span class="badge">FAST DELIVERY</span>
+              <span class="badge">BEST PRICES</span>
+              <span class="badge">24/7 SUPPORT</span>
+            </div>
+            <a class="badge support-badge" href="https://discord.gg/xyoo" target="_blank">💬 Support</a>
           </div>
         </div>
 
@@ -424,6 +442,7 @@
 
         <!-- DYNAMIC AREA (category tabs + product grid) -->
         <div id="catalogArea" style="display:none;">
+          <button class="btn" onclick="goBackToOverview()" style="margin-bottom:10px;">← Back to Catalog</button>
           <div class="category-tabs" id="categoryTabs"></div>
           <h2 class="catalog-title" id="catalogTitle"></h2>
           <div class="products-grid" id="productsGrid"></div>
@@ -470,10 +489,9 @@
     </div>
   </div>
 
-  <!-- FOOTER -->
+  <!-- FOOTER (simplified) -->
   <footer>
-    <div><span class="online-dot"></span> Online</div>
-    <a href="https://discord.gg/xyoo" target="_blank" class="btn" style="margin-top:10px;">Discord.gg/xyoo</a>
+    © Xyoo Shop
   </footer>
 
   <script>
@@ -569,6 +587,7 @@
       } catch (e) { console.error(e); }
     }
 
+    // ---------- FETCH PRODUCTS & UPDATE GAME COUNTS ----------
     async function fetchProducts() {
       try {
         const res = await fetch('/api/products');
@@ -588,7 +607,7 @@
       listEl.innerHTML = games.map(g => `
         <div class="game-card ${window.selectedGame && g.name === window.selectedGame.name ? 'active' : ''}" onclick="selectGame('${g.name.replace(/'/g, "\\'")}')">
           <img src="${g.image}" alt="${g.name}">
-          <span>${g.name} (${g.productCount})</span>
+          <span>${g.name} ${g.productCount}</span>
         </div>
       `).join('');
     }
@@ -604,8 +623,7 @@
       overview.innerHTML = games.map(g => `
         <div class="game-overview-card" onclick="selectGame('${g.name.replace(/'/g, "\\'")}')">
           <img src="${g.image}" alt="${g.name}">
-          <div class="game-name">${g.name}</div>
-          <div class="product-count">${g.productCount} products</div>
+          <div class="game-name">${g.name} ${g.productCount}</div>
         </div>
       `).join('');
     }
@@ -616,11 +634,21 @@
       window.selectedGame = game;
       selectedCategory = 'All';
       renderGameList();
-      renderGamesOverview();
+      renderGamesOverview();   // hide overview cards
       document.getElementById('catalogArea').style.display = 'block';
       renderCategoryTabs();
       renderProducts(game.products);
+      // Show game name and image in title
       document.getElementById('catalogTitle').innerHTML = `<img src="${game.image}" alt="${game.name}" style="width:40px;height:40px;object-fit:contain;margin-right:12px;"> ${game.name}`;
+    };
+
+    // Back to overview
+    window.goBackToOverview = function() {
+      window.selectedGame = null;
+      selectedCategory = 'All';
+      renderGameList();
+      document.getElementById('catalogArea').style.display = 'none';
+      renderGamesOverview();   // show overview cards
     };
 
     function renderCategoryTabs() {
