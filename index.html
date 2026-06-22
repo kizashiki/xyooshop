@@ -56,7 +56,7 @@
     }
     .nav-left { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
 
-    /* ---- RUNNING SHINE LOGO ---- */
+    /* ---- RUNNING SHINE LOGO (navbar) ---- */
     .logo {
       font-size: 24px; font-weight: 700;
       background: linear-gradient(90deg, #fff, #ff2a9d, #fff);
@@ -65,6 +65,19 @@
       animation: shine 2s linear infinite; cursor: pointer; text-shadow: none;
     }
     @keyframes shine { to { background-position: 200% center; } }
+
+    /* ---- HERO TITLE – Xyoo static pink, subtitle animated ---- */
+    .brand-logo {
+      color: #ff2a9d;               /* solid hot pink, no animation */
+      text-shadow: 0 0 20px #ff2a9d, 0 0 40px #ff2a9d;
+    }
+    .brand-sub {
+      background: linear-gradient(90deg, #fff, #ffb6c1, #fff);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 3s linear infinite;
+    }
 
     .nav-links { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
     .nav-links a, .nav-links button {
@@ -137,7 +150,7 @@
 
     .main-content { flex: 1; min-width: 0; }
 
-    /* ========== HERO RECTANGLE (dark & white ribbon, no purple) ========== */
+    /* ========== HERO RECTANGLE (dark & white ribbon) ========== */
     .hero-rect {
       position: relative;
       overflow: hidden;
@@ -165,8 +178,6 @@
     }
     .hero-rect h1 {
       font-size: 36px;
-      background: linear-gradient(to right, #fff, #ff2a9d);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       margin-bottom: 8px;
       position: relative;
       z-index: 3;
@@ -438,7 +449,8 @@
         <!-- CLASSIC HERO BOX with dark & white ribbon -->
         <div class="hero-rect">
           <div class="neon-ribbon"></div>
-          <h1>Xyoo - Roblox Shop</h1>
+          <!-- Updated title: Xyoo static pink, subtitle animated -->
+          <h1><span class="brand-logo">Xyoo</span><span class="brand-sub"> - Roblox Shop</span></h1>
           <p>Roblox items, currency & bundles — Trusted · Secure · Fast delivery</p>
           <div class="hero-bottom">
             <div class="hero-trust-badges">
