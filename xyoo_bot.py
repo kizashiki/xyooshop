@@ -37,9 +37,9 @@ CONFIG_FILE = "bot_config.json"
 # ---- SUPPORT CHAT STORAGE ----
 support_sessions = {}   # session_id -> list of {"from": "user"/"admin", "text": "..."}
 
-# ========== UPDATED DEFAULT PRODUCTS (simplified categories) ==========
+# ========== UPDATED DEFAULT PRODUCTS (Seed / Pet / Currency) ==========
 DEFAULT_PRODUCTS = [
-    # Seeds (all seed variants)
+    # Seeds
     {"id": 1,  "name": "Moon Bloom Seed (1x)",      "image": "mb.png",         "price": 7.00,  "category": "Seed"},
     {"id": 2,  "name": "Ghost Pepper Seed (1x)",    "image": "gpepper.png",    "price": 3.00,  "category": "Seed"},
     {"id": 3,  "name": "Ghost Pepper Seed (5x)",    "image": "gpepper.png",    "price": 10.00, "category": "Seed"},
@@ -53,7 +53,6 @@ DEFAULT_PRODUCTS = [
     {"id": 11, "name": "Rainbow Seed (100)",        "image": "rbseed.png",     "price": 9.00,  "category": "Seed"},
     {"id": 12, "name": "Golden Seed (50)",          "image": "gseed.png",      "price": 3.00,  "category": "Seed"},
     {"id": 13, "name": "Golden Seed (100)",         "image": "gseed.png",      "price": 5.00,  "category": "Seed"},
-    # Gardening tools (classified as Seed)
     {"id": 14, "name": "Super Sprinkler (10)",      "image": "placeholder.png", "price": 4.00,  "category": "Seed"},
     {"id": 15, "name": "Super Watering Can (10)",   "image": "placeholder.png", "price": 4.00,  "category": "Seed"},
     {"id": 16, "name": "Legendary Sprinkler (10)",  "image": "placeholder.png", "price": 2.00,  "category": "Seed"},
@@ -106,7 +105,7 @@ class XyooBot(commands.Bot):
         self.tree.add_command(setprice_command)
         self.tree.add_command(addproduct_command)
         self.tree.add_command(removeitem_command)
-        self.tree.add_command(reply_command)          # Support reply command
+        self.tree.add_command(reply_command)
 
         if os.getenv('SYNC_COMMANDS', 'false').lower() == 'true':
             await self.tree.sync()
@@ -118,7 +117,7 @@ class XyooBot(commands.Bot):
 
 bot = XyooBot()
 
-# ================== EMBED TEMPLATES (unchanged) ==================
+# ================== EMBED TEMPLATES ==================
 def get_main_embed():
     embed = discord.Embed(
         title="🤖 Xyoo Assistant",
@@ -202,7 +201,7 @@ def get_close_embed():
     embed.set_footer(text="Xyoo Shop • Thread closed")
     return embed
 
-# ================== UI COMPONENTS (unchanged) ==================
+# ================== UI COMPONENTS ==================
 class XyooSelect(discord.ui.Select):
     def __init__(self):
         options = [
@@ -301,6 +300,40 @@ async def close_thread_after_delay(thread, seconds):
     except Exception:
         pass
 
+# ================== SUPPORT REPLY BUTTON & MODAL ==================
+class SupportReplyModal(discord.ui.Modal, title="Reply to Support Chat"):
+    reply_text = discord.ui.TextInput(
+        label="Your reply",
+        style=discord.TextStyle.paragraph,
+        max_length=500,
+        required=True,
+        placeholder="Type your reply here..."
+    )
+
+    def __init__(self, session_id: str):
+        super().__init__()
+        self.session_id = session_id
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if self.session_id in support_sessions:
+            support_sessions[self.session_id].append({"from": "admin", "text": self.reply_text.value})
+        else:
+            support_sessions[self.session_id] = [{"from": "admin", "text": self.reply_text.value}]
+        await interaction.response.send_message(f"✅ Reply sent to session `{self.session_id}`.", ephemeral=True)
+
+class SupportReplyButton(discord.ui.Button):
+    def __init__(self, session_id: str):
+        super().__init__(label="Reply", style=discord.ButtonStyle.primary, emoji="💬")
+        self.session_id = session_id
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_modal(SupportReplyModal(self.session_id))
+
+class SupportReplyView(discord.ui.View):
+    def __init__(self, session_id: str):
+        super().__init__(timeout=None)
+        self.add_item(SupportReplyButton(session_id))
+
 # ================== SLASH COMMANDS ==================
 @app_commands.command(name="ping", description="🏓 Ping the bot")
 async def ping_command(interaction: discord.Interaction):
@@ -358,7 +391,7 @@ async def setprice_command(interaction: discord.Interaction, item: str, price: f
 
 @app_commands.command(name="addproduct", description="[Admin] Add a new product (attach the image)")
 @app_commands.default_permissions(administrator=True)
-@app_commands.describe(name="Product name", price="Price in USD", category="Category (e.g. Seed, Pet)", image="Attach the product image (PNG/JPG)")
+@app_commands.describe(name="Product name", price="Price in USD", category="Category (Seed, Pet, Currency)", image="Attach the product image (PNG/JPG)")
 async def addproduct_command(interaction: discord.Interaction, name: str, price: float, category: str, image: discord.Attachment):
     if price < 0:
         await interaction.response.send_message("❌ Price cannot be negative.", ephemeral=True)
@@ -397,8 +430,8 @@ async def removeitem_command(interaction: discord.Interaction, item: str):
             return
     await interaction.response.send_message(f"❌ Product **{item}** not found.", ephemeral=True)
 
-# ---------- SUPPORT REPLY ----------
-@app_commands.command(name="reply", description="[Admin] Reply to a support chat session")
+# ---------- SUPPORT REPLY (fallback command, not needed with the button) ----------
+@app_commands.command(name="reply", description="[Admin] Reply to a support chat session (fallback)")
 @app_commands.default_permissions(administrator=True)
 @app_commands.describe(session="Session ID (shown in the DM)", message="Your reply text")
 async def reply_command(interaction: discord.Interaction, session: str, message: str):
@@ -560,8 +593,9 @@ async def support_send():
                 description=f"**Session:** `{session_id}`\n**Message:** {user_message}",
                 color=EMBED_COLOR
             )
-            embed.set_footer(text="Reply with /reply session:<id> message:<text>")
-            await support_user.send(embed=embed)
+            embed.set_footer(text="Click the Reply button below to respond instantly")
+            view = SupportReplyView(session_id)
+            await support_user.send(embed=embed, view=view)
         except Exception as e:
             logger.error(f"Failed to DM support user: {e}")
 
