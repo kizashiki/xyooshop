@@ -284,13 +284,23 @@
     }
     .welcome-notification strong { color: #ff2a9d; }
 
-    /* ---- CATEGORY TABS & PRODUCT GRID ---- */
-    .category-tabs {
+    /* ---- VERTICAL CATEGORY LIST (like sidebar) ---- */
+    .catalog-content {
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-      justify-content: flex-start;   /* left aligned */
+      gap: 20px;
+    }
+    .category-sidebar {
+      width: 200px;
+      flex-shrink: 0;
+    }
+    .category-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .category-list .btn {
+      text-align: left;
+      width: 100%;
     }
     .catalog-title {
       font-size: 24px; margin-bottom: 20px;
@@ -375,6 +385,8 @@
       .search-bar { width: 100%; }
       .modal-content { width: 100%; }
       .games-overview { justify-content: center; }
+      .catalog-content { flex-direction: column; }
+      .category-sidebar { width: 100%; }
     }
   </style>
 </head>
@@ -440,12 +452,16 @@
         <!-- GAMES OVERVIEW (shown when no game selected) -->
         <div id="gamesOverview" class="games-overview"></div>
 
-        <!-- DYNAMIC AREA (category tabs + product grid) -->
+        <!-- DYNAMIC AREA (vertical category list + product grid) -->
         <div id="catalogArea" style="display:none;">
           <button class="btn" onclick="goBackToOverview()" style="margin-bottom:10px;">← Back to Catalog</button>
-          <div class="category-tabs" id="categoryTabs"></div>
           <h2 class="catalog-title" id="catalogTitle"></h2>
-          <div class="products-grid" id="productsGrid"></div>
+          <div class="catalog-content">
+            <div class="category-sidebar">
+              <div class="category-list" id="categoryTabs"></div>
+            </div>
+            <div class="products-grid" id="productsGrid"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -638,7 +654,6 @@
       document.getElementById('catalogArea').style.display = 'block';
       renderCategoryTabs();
       renderProducts(game.products);
-      // Show game name and image in title
       document.getElementById('catalogTitle').innerHTML = `<img src="${game.image}" alt="${game.name}" style="width:40px;height:40px;object-fit:contain;margin-right:12px;"> ${game.name}`;
     };
 
@@ -654,9 +669,10 @@
     function renderCategoryTabs() {
       if (!window.selectedGame) return;
       const cats = ['All', ...new Set(window.selectedGame.products.map(p => p.category))];
-      document.getElementById('categoryTabs').innerHTML = cats.map(c =>
+      const tabsContainer = document.getElementById('categoryTabs');
+      tabsContainer.innerHTML = cats.map(c =>
         `<button class="btn ${c === selectedCategory ? 'btn-primary' : ''}" onclick="selectCategory('${c}')">${c}</button>`
-      ).join(' ');
+      ).join('');
     }
 
     function renderProducts(products) {
