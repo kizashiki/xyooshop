@@ -53,9 +53,9 @@ DEFAULT_PRODUCTS = [
     {"id": 11, "name": "Rainbow Seed (100)",        "image": "rbseed.png",     "price": 9.00,  "category": "Seed"},
     {"id": 12, "name": "Golden Seed (50)",          "image": "gseed.png",      "price": 3.00,  "category": "Seed"},
     {"id": 13, "name": "Golden Seed (100)",         "image": "gseed.png",      "price": 5.00,  "category": "Seed"},
-    {"id": 14, "name": "Super Sprinkler (10)",      "image": "ss.png", "price": 4.00,  "category": "Seed"},
-    {"id": 15, "name": "Super Watering Can (10)",   "image": "sw.png", "price": 4.00,  "category": "Seed"},
-    {"id": 16, "name": "Legendary Sprinkler (10)",  "image": "ls.png", "price": 2.00,  "category": "Seed"},
+    {"id": 14, "name": "Super Sprinkler (10)",      "image": "ss.png", "price": 4.00,  "category": "Tool"},
+    {"id": 15, "name": "Super Watering Can (10)",   "image": "sw.png", "price": 4.00,  "category": "Tool"},
+    {"id": 16, "name": "Legendary Sprinkler (10)",  "image": "ls.png", "price": 2.00,  "category": "Tool"},
     # Pets
     {"id": 17, "name": "Bear",                      "image": "bear.png",       "price": 3.00,  "category": "Pet"},
     {"id": 18, "name": "Dragonfly",                 "image": "df.png",         "price": 3.00,  "category": "Pet"},
