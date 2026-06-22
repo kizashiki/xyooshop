@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -18,7 +18,7 @@
       overflow-x: hidden;
     }
 
-    /* ---- AURA CURSOR ---- */
+    /* ---- AURA CURSOR (desktop only) ---- */
     .cursor-aura {
       position: fixed;
       width: 70px; height: 70px;
@@ -161,7 +161,6 @@
     }
     .game-card img { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; }
 
-    /* Game name with shine */
     .game-card .game-name {
       font-weight: 600;
       background: linear-gradient(90deg, #ff2a9d, #a855f7, #ff2a9d);
@@ -171,7 +170,6 @@
       animation: shine 2s linear infinite;
     }
 
-    /* Count badge (outside the shine) */
     .count-badge {
       background: rgba(255,42,157,0.15);
       border: 1px solid #ff2a9d;
@@ -180,7 +178,7 @@
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
-      margin-left: auto; /* push to right */
+      margin-left: auto;
       white-space: nowrap;
     }
 
@@ -430,21 +428,145 @@
       color: #8b5cf6;
     }
 
+    /* ==================== MOBILE RESPONSIVE ==================== */
     @media (max-width: 768px) {
-      .overview-layout { flex-direction: column; }
-      .sidebar { width: 100%; position: static; }
-      .navbar { flex-direction: column; }
-      .search-bar { width: 100%; }
-      .modal-content { width: 100%; }
-      .games-overview { justify-content: center; }
-      .catalog-content { flex-direction: column; }
-      .category-sidebar { width: 100%; }
-      .products-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+      /* Hide aura on mobile */
+      .cursor-aura {
+        display: none !important;
+      }
+
+      /* Stack overview layout */
+      .overview-layout {
+        flex-direction: column;
+        padding: 0 10px;
+      }
+      .sidebar {
+        width: 100%;
+        position: static;
+        margin-bottom: 20px;
+      }
+
+      /* Navbar adjustments */
+      .navbar {
+        padding: 10px 15px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .nav-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .nav-links {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .search-bar {
+        width: 100%;
+      }
+
+      /* Hero rectangle */
+      .hero-rect {
+        padding: 20px;
+      }
+      .hero-rect h1 {
+        font-size: 28px;
+      }
+      .hero-rect p {
+        font-size: 14px;
+      }
+
+      /* Overview cards take full width */
+      .games-overview {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .game-overview-card {
+        width: 100%;
+        padding: 16px;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        text-align: left;
+      }
+      .game-overview-card img {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 0;
+      }
+      .game-overview-card .game-name {
+        font-size: 16px;
+        margin: 0;
+      }
+      .game-overview-card .count-badge {
+        position: static;
+        margin-left: auto;
+      }
+
+      /* Detail view */
+      .detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .detail-header h1 {
+        font-size: 28px;
+      }
+      .catalog-content {
+        flex-direction: column;
+      }
+      .category-sidebar {
+        width: 100%;
+        margin-bottom: 15px;
+      }
+      .category-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .category-list .btn {
+        width: auto;
+        flex: 0 0 auto;
+      }
+      .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+      }
+
+      /* Modal full screen */
+      .modal-content {
+        width: 100%;
+      }
+    }
+
+    /* Small phones */
+    @media (max-width: 480px) {
+      .game-card {
+        padding: 8px;
+        gap: 8px;
+      }
+      .game-card img {
+        width: 32px;
+        height: 32px;
+      }
+      .game-card .game-name {
+        font-size: 14px;
+      }
+      .count-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+      }
+      .hero-rect h1 {
+        font-size: 24px;
+      }
+      .badge {
+        font-size: 10px;
+        padding: 4px 12px;
+      }
     }
   </style>
 </head>
 <body>
-  <!-- AURA ELEMENT -->
+  <!-- AURA ELEMENT (hidden on mobile via CSS) -->
   <div class="cursor-aura" id="cursorAura"></div>
 
   <!-- NAVIGATION -->
@@ -551,18 +673,24 @@
   </footer>
 
   <script>
-    // ---------- AURA CURSOR ----------
+    // ---------- AURA CURSOR (only run if visible) ----------
     const aura = document.getElementById('cursorAura');
-    let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2, curX = mouseX, curY = mouseY;
-    document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
-    function animateAura() {
-      curX += (mouseX - curX) * 0.15;
-      curY += (mouseY - curY) * 0.15;
-      aura.style.left = curX + 'px';
-      aura.style.top = curY + 'px';
-      requestAnimationFrame(animateAura);
+    // Simple check: if screen width > 768px, animate
+    if (window.innerWidth > 768) {
+      let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2, curX = mouseX, curY = mouseY;
+      document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+      function animateAura() {
+        curX += (mouseX - curX) * 0.15;
+        curY += (mouseY - curY) * 0.15;
+        aura.style.left = curX + 'px';
+        aura.style.top = curY + 'px';
+        requestAnimationFrame(animateAura);
+      }
+      animateAura();
+    } else {
+      // Ensure it's hidden (already via CSS, but just in case)
+      aura.style.display = 'none';
     }
-    animateAura();
 
     // ---------- GLOBALS ----------
     const API_KEY = 'fzRFHIqB8u2WCU5mvGyPZK4tdj9Yw3gcrhLE7MSnVoeiplskTXaQO6bN0AxDJ1';
@@ -682,7 +810,6 @@
 
     // ---------- SWITCH TO GAME DETAIL VIEW ----------
     function showGameDetail(game) {
-      // Hide overview layout, show fullpage detail
       document.getElementById('overviewLayout').style.display = 'none';
       const fullpage = document.getElementById('gameDetailFullpage');
       fullpage.classList.add('active');
@@ -976,7 +1103,6 @@
     async function init() {
       await loadUserFromParam();
       await fetchProducts();
-      // Ensure overview is shown
       document.getElementById('overviewLayout').style.display = 'flex';
       document.getElementById('gameDetailFullpage').classList.remove('active');
       renderGamesOverview();
