@@ -11,29 +11,30 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      background: #0a0a0a;
+      background: #0a0a0a; /* deep matte black */
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       color: #fff;
       min-height: 100vh;
       overflow-x: hidden;
     }
 
-    /* ---- SOFT DIFFUSE AURA CURSOR (no circle, shapeless glow) ---- */
+    /* ---- THICKER, MORE VISIBLE DIFFUSE AURA CURSOR (no circle) ---- */
     .cursor-aura {
       position: fixed;
-      width: 200px;
-      height: 200px;
+      width: 280px;
+      height: 280px;
       border-radius: 0;                   /* no circle shape */
       pointer-events: none;
       z-index: 9999;
       transform: translate(-50%, -50%);
-      background: radial-gradient(circle, rgba(255,42,157,0.25) 0%, transparent 60%);
-      filter: blur(12px);
+      /* Stronger, more opaque pink/purple glow */
+      background: radial-gradient(circle, rgba(255,42,157,0.35) 0%, rgba(139,92,246,0.15) 30%, transparent 60%);
+      filter: blur(16px);
       animation: auraPulse 2s infinite alternate;
     }
     @keyframes auraPulse {
-      0% { transform: translate(-50%, -50%) scale(1); opacity:0.7; }
-      100% { transform: translate(-50%, -50%) scale(1.3); opacity:1; }
+      0% { transform: translate(-50%, -50%) scale(1); opacity:0.8; }
+      100% { transform: translate(-50%, -50%) scale(1.2); opacity:1; }
     }
 
     /* ---- GLOWING TEXT & BUTTONS ---- */
@@ -137,11 +138,11 @@
 
     .main-content { flex: 1; min-width: 0; }
 
-    /* ========== HERO RECTANGLE (darker ribbon) ========== */
+    /* ========== HERO RECTANGLE (dark & white ribbon, no purple) ========== */
     .hero-rect {
       position: relative;
       overflow: hidden;
-      background: linear-gradient(135deg, rgba(255,42,157,0.15), rgba(139,92,246,0.1));
+      background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
       border: 1px solid #8b5cf6;
       border-radius: 16px;
       padding: 30px;
@@ -149,15 +150,16 @@
       text-align: left;
       box-shadow: 0 0 20px rgba(139,92,246,0.3), inset 0 0 15px rgba(255,255,255,0.05);
     }
+    /* Dark & white animated ribbon */
     .hero-rect .neon-ribbon {
       position: absolute;
       top: 0; left: -10%;
       width: 120%; height: 100%;
       pointer-events: none;
       z-index: 2;
-      background: linear-gradient(90deg, transparent, rgba(255,42,157,0.15), rgba(139,92,246,0.1), transparent);
-      filter: blur(8px);
-      animation: ribbonFlow 10s linear infinite;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), rgba(255,255,255,0.05), transparent);
+      filter: blur(10px);
+      animation: ribbonFlow 12s linear infinite;
     }
     @keyframes ribbonFlow {
       0% { transform: translateX(-100%) skewX(-15deg); }
@@ -368,7 +370,7 @@
   </style>
 </head>
 <body>
-  <!-- SOFT AURA ELEMENT -->
+  <!-- THICKER AURA ELEMENT -->
   <div class="cursor-aura" id="cursorAura"></div>
 
   <!-- NAVIGATION -->
@@ -410,7 +412,7 @@
       </aside>
 
       <div class="main-content">
-        <!-- CLASSIC HERO BOX with darker ribbon -->
+        <!-- CLASSIC HERO BOX with dark & white ribbon -->
         <div class="hero-rect">
           <div class="neon-ribbon"></div>
           <h1>Xyoo - Roblox Shop</h1>
@@ -477,14 +479,14 @@
   <footer>© Xyoo Shop</footer>
 
   <script>
-    // ---------- SOFT AURA CURSOR ----------
+    // ---------- THICKER AURA CURSOR ----------
     const aura = document.getElementById('cursorAura');
     if (window.innerWidth > 768) {
       let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2, curX = mouseX, curY = mouseY;
       document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
       function animateAura() {
-        curX += (mouseX - curX) * 0.12;
-        curY += (mouseY - curY) * 0.12;
+        curX += (mouseX - curX) * 0.1;
+        curY += (mouseY - curY) * 0.1;
         aura.style.left = curX + 'px';
         aura.style.top = curY + 'px';
         requestAnimationFrame(animateAura);
