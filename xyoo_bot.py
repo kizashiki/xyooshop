@@ -63,7 +63,7 @@ DEFAULT_PRODUCTS = [
     {"id": 20, "name": "Raccoon",                   "image": "racc.png",       "price": 10.00, "category": "Pet"},
     {"id": 21, "name": "Ice Serpent",               "image": "is.png",         "price": 28.00, "category": "Pet"},
     # Currency
-    {"id": 22, "name": "1M Sheckles",               "image": "sheckles.png",   "price": 1.99,  "category": "Currency"},
+    {"id": 22, "name": "1M Sheckles",               "image": "sheckles.png",   "price": 0.99,  "category": "Currency"},
 ]
 
 def load_config():
