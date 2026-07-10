@@ -16,6 +16,7 @@ FORUM_CHANNEL_ID = 1523641316020326470
 ORDER_CATEGORY_ID = 1404156170201075873
 SUPPORT_USER_ID = 592402229978333331
 VOUCH_CHANNEL_ID = 1393165027707588749
+VOUCH_ROLE_ID = 1518095572936953857          # Role given after a successful vouch
 
 CYBER_PURPLE = discord.Color.from_rgb(186, 85, 211)
 GOLD_COLOR = discord.Color.gold()
@@ -32,7 +33,7 @@ ORDER_COUNTER_FILE = "order_counter.json"
 GCASH_IMAGE_FILENAME = "gcash-qr.jpg"
 GCASH_NUMBER = "0948 875 4669"   # replace with yours
 
-# PayPal message (plain text – used inside an embed)
+# PayPal message
 PAYPAL_MESSAGE = (
     "Make sure to select **__Friends and Family__ and not the other option**, so the money won't be put on hold.\n\n"
     "ALWAYS SEND RECEIPT\n\n"
@@ -233,7 +234,6 @@ async def start_order_flow(interaction: discord.Interaction):
     view = discord.ui.View(timeout=300)
     view.add_item(game_select)
 
-    # Step 1: game selection with guide
     embed = discord.Embed(title="🛍️ Auto‑Shop – Step 1", description="🎮 **Choose your game** ⬇️", color=CYBER_PURPLE)
     await interaction.followup.send(embed=embed, view=view, ephemeral=True)
     original_msg = await interaction.original_response()
@@ -246,7 +246,6 @@ async def start_order_flow(interaction: discord.Interaction):
             await sel_inter.response.edit_message(content="No items found. Contact admin.", view=None, embed=None)
             return
 
-        # Step 2: item selection
         item_opts = [discord.SelectOption(label=it["label"][:100], value=it["line"]) for it in items]
         item_select = discord.ui.Select(placeholder="📦 Select item...", options=item_opts)
         embed_item = discord.Embed(title=f"🎮 {game} – Step 2", description="📦 **Select the item you want to buy** ⬇️", color=CYBER_PURPLE)
@@ -257,7 +256,6 @@ async def start_order_flow(interaction: discord.Interaction):
         async def on_item_select(item_inter: discord.Interaction):
             item_line = item_inter.data["values"][0]
 
-            # Step 3: quantity selection
             qty_opts = [discord.SelectOption(label=str(i), value=str(i)) for i in range(1, 11)]
             qty_select = discord.ui.Select(placeholder="🔢 Quantity", options=qty_opts)
             embed_qty = discord.Embed(title=f"📦 {item_line} – Step 3", description="🔢 **How many?** ⬇️", color=CYBER_PURPLE)
@@ -288,7 +286,6 @@ async def start_order_flow(interaction: discord.Interaction):
                     "user_name": str(qty_inter.user),
                 }
 
-                # Step 4: payment selection
                 pay_view = discord.ui.View(timeout=120)
 
                 async def gcash_cb(pay_int: discord.Interaction):
@@ -296,7 +293,6 @@ async def start_order_flow(interaction: discord.Interaction):
                     order_data["payment"] = "GCash"
                     await create_order_ticket(pay_int, order_data)
 
-                    # Build confirmation embed for DM
                     embed_confirm = discord.Embed(title="✅ Order Created", color=GREEN_COLOR)
                     embed_confirm.add_field(name="Game", value=order_data['game'], inline=True)
                     embed_confirm.add_field(name="Item", value=order_data['item_line'], inline=False)
@@ -305,12 +301,10 @@ async def start_order_flow(interaction: discord.Interaction):
                     embed_confirm.add_field(name="Payment", value="GCash", inline=True)
                     embed_confirm.set_footer(text="Check your private ticket channel for payment instructions.")
 
-                    # Try to DM the customer, then delete the ephemeral dialog
                     user = pay_int.user
                     try:
                         await user.send(embed=embed_confirm)
                     except discord.Forbidden:
-                        # DMs closed – we still remove the ephemeral message
                         pass
                     await original_msg.delete()
 
@@ -356,7 +350,7 @@ async def start_order_flow(interaction: discord.Interaction):
 
     game_select.callback = on_game_select
 
-# ================== TICKET DASHBOARD (unchanged) ==================
+# ================== TICKET DASHBOARD ==================
 class TicketControlView(discord.ui.View):
     def __init__(self, order_id, customer, channel):
         super().__init__(timeout=None)
@@ -463,7 +457,7 @@ class CloseTicketButton(discord.ui.Button):
         await asyncio.sleep(3)
         await self.parent.channel.delete()
 
-# ================== VOUCH SYSTEM ==================
+# ================== VOUCH SYSTEM (with auto-role) ==================
 class VouchModal(discord.ui.Modal, title="Leave a Vouch"):
     rating = discord.ui.TextInput(label="Rating (1-5)", placeholder="Enter a number from 1 to 5", required=True, min_length=1, max_length=1)
     review = discord.ui.TextInput(label="Your Review", style=discord.TextStyle.paragraph, placeholder="Tell us about your experience...", required=True, max_length=500)
@@ -481,15 +475,34 @@ class VouchModal(discord.ui.Modal, title="Leave a Vouch"):
         except:
             await interaction.response.send_message("❌ Invalid rating.", ephemeral=True)
             return
+
+        review_text = self.review.value
         vouch_channel = interaction.guild.get_channel(VOUCH_CHANNEL_ID)
         if not vouch_channel:
             await interaction.response.send_message("❌ Vouch channel not found.", ephemeral=True)
             return
+
+        # Post the vouch
         stars = "⭐" * rating
         embed = discord.Embed(title="🌟 New Vouch!", color=GOLD_COLOR,
-                              description=f"**Customer:** {self.customer.mention}\n**Rating:** {stars}\n**Review:** {self.review.value}")
+                              description=f"**Customer:** {self.customer.mention}\n**Rating:** {stars}\n**Review:** {review_text}")
         await vouch_channel.send(embed=embed)
-        await interaction.response.send_message("✅ Thank you! Ticket will close shortly.", ephemeral=True)
+
+        # ---- ADD THE VOUCH ROLE ----
+        role = interaction.guild.get_role(VOUCH_ROLE_ID)
+        if role:
+            try:
+                await self.customer.add_roles(role, reason="Customer left a vouch")
+                await interaction.response.send_message("✅ Thank you! The vouch role has been added and the ticket will close shortly.", ephemeral=True)
+            except discord.Forbidden:
+                await interaction.response.send_message("✅ Vouch recorded, but I couldn't add the role (missing permissions). Ticket will close shortly.", ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message(f"✅ Vouch recorded. Role could not be added due to an error. Ticket will close shortly.", ephemeral=True)
+                logger.error(f"Failed to add vouch role: {e}")
+        else:
+            await interaction.response.send_message("✅ Vouch recorded, but the vouch role was not found. Please contact an admin.", ephemeral=True)
+
+        # Notify the ticket and close
         await self.order_channel.send(f"🌟 {self.customer.mention} left a vouch: {stars}")
         await asyncio.sleep(5)
         await self.order_channel.delete()
@@ -518,7 +531,7 @@ class VouchRequestView(discord.ui.View):
         except:
             pass
 
-# ================== ORDER TICKET CREATION (with reminder) ==================
+# ================== ORDER TICKET CREATION ==================
 async def create_order_ticket(interaction: discord.Interaction, order):
     guild = interaction.guild
     category = guild.get_channel(ORDER_CATEGORY_ID)
@@ -605,7 +618,7 @@ async def refresh_products_command(interaction: discord.Interaction):
     await bot._refresh_products()
     await interaction.followup.send(f"✅ Products refreshed! {len(bot.forum_cache)} games.", ephemeral=True)
 
-@app_commands.command(name="resetorders", description="[Admin] Reset the order counter (next order will be #start_number+1)")
+@app_commands.command(name="resetorders", description="[Admin] Reset the order counter")
 @app_commands.default_permissions(administrator=True)
 @app_commands.describe(start_number="Next order will be this number + 1 (e.g., 0 -> next is #0001)")
 async def reset_orders_command(interaction: discord.Interaction, start_number: int = 0):
