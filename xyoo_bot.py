@@ -180,7 +180,6 @@ class XyooSelect(discord.ui.Select):
             discord.SelectOption(label="💳 Payment Methods", value="payment_methods"),
             discord.SelectOption(label="🛍️ Order Here", value="order_here"),
         ]
-        # Changed placeholder to professional phrasing
         super().__init__(placeholder="Select an option…", min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
@@ -297,7 +296,7 @@ async def start_order_flow(interaction: discord.Interaction):
                     order_data["payment"] = "GCash"
                     await create_order_ticket(pay_int, order_data)
 
-                    # Ephemeral confirmation with full summary
+                    # Build confirmation embed for DM
                     embed_confirm = discord.Embed(title="✅ Order Created", color=GREEN_COLOR)
                     embed_confirm.add_field(name="Game", value=order_data['game'], inline=True)
                     embed_confirm.add_field(name="Item", value=order_data['item_line'], inline=False)
@@ -305,7 +304,15 @@ async def start_order_flow(interaction: discord.Interaction):
                     embed_confirm.add_field(name="Total", value=f"${order_data['total']:.2f}", inline=True)
                     embed_confirm.add_field(name="Payment", value="GCash", inline=True)
                     embed_confirm.set_footer(text="Check your private ticket channel for payment instructions.")
-                    await original_msg.edit(embed=embed_confirm, view=None)
+
+                    # Try to DM the customer, then delete the ephemeral dialog
+                    user = pay_int.user
+                    try:
+                        await user.send(embed=embed_confirm)
+                    except discord.Forbidden:
+                        # DMs closed – we still remove the ephemeral message
+                        pass
+                    await original_msg.delete()
 
                 async def paypal_cb(pay_int: discord.Interaction):
                     await pay_int.response.defer()
@@ -319,7 +326,13 @@ async def start_order_flow(interaction: discord.Interaction):
                     embed_confirm.add_field(name="Total", value=f"${order_data['total']:.2f}", inline=True)
                     embed_confirm.add_field(name="Payment", value="PayPal", inline=True)
                     embed_confirm.set_footer(text="Check your private ticket channel for payment instructions.")
-                    await original_msg.edit(embed=embed_confirm, view=None)
+
+                    user = pay_int.user
+                    try:
+                        await user.send(embed=embed_confirm)
+                    except discord.Forbidden:
+                        pass
+                    await original_msg.delete()
 
                 gcash_btn = discord.ui.Button(label="💰 GCash", style=discord.ButtonStyle.primary)
                 paypal_btn = discord.ui.Button(label="🌍 PayPal", style=discord.ButtonStyle.primary)
@@ -343,7 +356,7 @@ async def start_order_flow(interaction: discord.Interaction):
 
     game_select.callback = on_game_select
 
-# ================== TICKET DASHBOARD ==================
+# ================== TICKET DASHBOARD (unchanged) ==================
 class TicketControlView(discord.ui.View):
     def __init__(self, order_id, customer, channel):
         super().__init__(timeout=None)
@@ -367,11 +380,9 @@ class TicketControlView(discord.ui.View):
         embed.add_field(name="Customer", value=self.customer.mention, inline=True)
         embed.set_footer(text="Xyoo Auto‑Shop")
 
-        # Remove payment image if not pending
         if self.status != "pending":
             embed.set_image(url=None)
 
-        # Auto‑delete the separate payment instructions (PayPal) when status leaves pending
         if self.payment_msg and self.status != "pending":
             try:
                 await self.payment_msg.delete()
@@ -384,7 +395,6 @@ class TicketControlView(discord.ui.View):
         if interaction:
             await interaction.response.edit_message(embed=embed, view=self)
         else:
-            # For initial send or non-interaction edit, update the stored dashboard message
             if self.dashboard_msg:
                 await self.dashboard_msg.edit(embed=embed, view=self)
 
@@ -508,7 +518,7 @@ class VouchRequestView(discord.ui.View):
         except:
             pass
 
-# ================== ORDER TICKET CREATION (with extra reminder) ==================
+# ================== ORDER TICKET CREATION (with reminder) ==================
 async def create_order_ticket(interaction: discord.Interaction, order):
     guild = interaction.guild
     category = guild.get_channel(ORDER_CATEGORY_ID)
@@ -532,7 +542,6 @@ async def create_order_ticket(interaction: discord.Interaction, order):
 
     control_view = TicketControlView(order_id, interaction.user, channel)
 
-    # Main dashboard embed (without payment image yet, will be added below for GCash)
     embed = discord.Embed(title=f"🧾 Order {order_id}", color=CYBER_PURPLE,
                           description="**Thank you for your order!**\nPlease complete payment below.")
     embed.add_field(name="Game", value=order['game'], inline=True)
@@ -543,14 +552,26 @@ async def create_order_ticket(interaction: discord.Interaction, order):
     embed.add_field(name="Status", value="🟡 Pending Payment", inline=False)
     embed.set_footer(text="Xyoo Auto‑Shop • Automated")
 
-    # ===== NEW: Order Reminder message inside the ticket =====
-    reminder_text = (
-        f"📌 **Order Reminder**\n"
-        f"You ordered **{order['item_line']}** ×{order['qty']}\n"
-        f"Total to pay: **${order['total']:.2f}** via **{order['payment']}**\n"
-        f"Please complete the payment using the instructions below."
-    )
-    # ======================================================
+    clean_item = order['item_line'].strip('- ').strip('*').strip()
+
+    if order["payment"] == "GCash":
+        reminder_text = (
+            f"📌 **Order Reminder**\n"
+            f"• Item: **{clean_item}** ×{order['qty']}\n"
+            f"• Total to pay: **${order['total']:.2f}**\n"
+            f"• Payment method: **GCash**\n\n"
+            f"Please send your payment to **{GCASH_NUMBER}** and post a screenshot of the receipt in this channel."
+        )
+    else:
+        reminder_text = (
+            f"📌 **Order Reminder**\n"
+            f"• Item: **{clean_item}** ×{order['qty']}\n"
+            f"• Total to pay: **${order['total']:.2f}**\n"
+            f"• Payment method: **PayPal**\n\n"
+            f"⚠️ **Important:** You must select **Friends & Family**, not Goods & Services. "
+            f"If the money is put on hold, the transaction will be cancelled.\n"
+            f"After payment, please post a screenshot of the receipt in this channel."
+        )
 
     if order["payment"] == "GCash":
         if os.path.isfile(GCASH_IMAGE_FILENAME):
@@ -561,11 +582,9 @@ async def create_order_ticket(interaction: discord.Interaction, order):
             dashboard_msg = await channel.send(embed=embed, view=control_view)
             await channel.send(f"📱 GCash Payment\nNumber: **{GCASH_NUMBER}**\n(QR image not found)")
         control_view.dashboard_msg = dashboard_msg
-        # Send the reminder after the dashboard
         await channel.send(reminder_text)
     else:
         dashboard_msg = await channel.send(embed=embed, view=control_view)
-        # Send PayPal instructions embed
         paypal_embed = discord.Embed(
             title="🌍 PayPal Payment",
             description=PAYPAL_MESSAGE,
@@ -574,7 +593,6 @@ async def create_order_ticket(interaction: discord.Interaction, order):
         payment_msg = await channel.send(embed=paypal_embed)
         control_view.dashboard_msg = dashboard_msg
         control_view.payment_msg = payment_msg
-        # Send the reminder after the payment instructions
         await channel.send(reminder_text)
 
     await channel.send(f"<@{SUPPORT_USER_ID}> New order!", delete_after=5)
@@ -617,7 +635,6 @@ async def setup_command(interaction: discord.Interaction):
     view = PanelSetupView()
     await interaction.followup.send("📌 Select a channel:", view=view, ephemeral=True)
 
-# Legacy commands redirect to dashboard
 @app_commands.command(name="request-vouch", description="[Admin] Ask for vouch (legacy)")
 @app_commands.default_permissions(administrator=True)
 async def request_vouch_command(interaction: discord.Interaction):
