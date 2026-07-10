@@ -31,10 +31,10 @@ CONFIG_FILE = "bot_config.json"
 GCASH_IMAGE_FILENAME = "gcash-qr.jpg"            # The image file must be in the bot's folder
 GCASH_NUMBER = "0948 875 4669"                   # <-- REPLACE WITH YOUR REAL NUMBER
 
-# PayPal message (plain text, so custom emojis render correctly)
+# PayPal message (using the exact emoji tags you provided)
 PAYPAL_MESSAGE = (
     "<a:onlen:1347265878646853656> **Make sure to select __Friends and Family__ and not the other option, so the money won't be put on hold.**\n\n"
-    "<a:PayPal:1327594224035823677> **ALWAYS SEND RECEIPT** <a:PayPal:1327594224035823677>\n\n"
+    "<a:PayPal~1:1327594224035823677> **ALWAYS SEND RECEIPT** <a:PayPal~1:1327594224035823677>\n\n"
     "https://www.paypal.com/paypalme/OfficialXyoo"
 )
 
@@ -144,7 +144,7 @@ def get_main_embed():
         color=EMBED_COLOR,
         timestamp=datetime.datetime.now()
     )
-    embed.add_field(name="📋 Available Options", value="📋 **Instructions How To Order**\n💳 **Payment Methods**\n🛍️ **Order Here**\n💰 **View Prices**", inline=False)
+    embed.add_field(name="📋 Available Options", value="📋 **Instructions How To Order**\n💳 **Payment Methods**\n🛍️ **Order Here**", inline=False)
     embed.add_field(name="⚡ Why Choose Xyoo?", value="✅ Fast & Reliable\n🔒 Secure Payments\n🛡️ 24/7 Support\n⭐ Premium Quality", inline=True)
     embed.add_field(name="🎁 Special Perks", value="🔥 Great Prices\n📝 Customer Reviews\n🚀 Quick Delivery\n💝 Loyalty Rewards", inline=True)
     embed.set_image(url=bot.config.get("image_url", ""))
@@ -159,7 +159,7 @@ def get_tutorial_embed():
     )
     embed.add_field(
         name="📌 Step‑by‑Step Guide",
-        value="```\n1️⃣ Click 'Order Here' below\n2️⃣ Choose your game\n3️⃣ Copy the item line you want from the price list\n4️⃣ Paste it and add the quantity\n5️⃣ Select payment method (GCash or PayPal)\n6️⃣ Your order ticket will be created\n```",
+        value="```\n1️⃣ Click 'Order Here' below\n2️⃣ Choose your game\n3️⃣ Click 'Enter Order Details' and paste the item line & quantity\n4️⃣ Select payment method (GCash or PayPal)\n5️⃣ Your order ticket will be created\n```",
         inline=False
     )
     embed.add_field(name="💡 Need Help?", value=f"📞 Contact <@{SUPPORT_USER_ID}> anytime!", inline=False)
@@ -191,7 +191,6 @@ class XyooSelect(discord.ui.Select):
             discord.SelectOption(label="Instructions How To Order", value="tutorial", emoji="📋"),
             discord.SelectOption(label="Payment Methods Available", value="payment_methods", emoji="💳"),
             discord.SelectOption(label="Order Here", value="order_here", emoji="🛍️"),
-            # ❌ Removed "View Prices"
         ]
         super().__init__(placeholder="Choose an option...", min_values=1, max_values=1, options=options)
 
@@ -233,6 +232,92 @@ class PanelSetupView(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.add_item(PanelChannelSelect())
+
+# ================== ORDER MODAL ==================
+class OrderDetailModal(discord.ui.Modal, title="Enter Your Order"):
+    item_line = discord.ui.TextInput(
+        label="Item Line",
+        placeholder="e.g. Moon Bloom Seed - 1/$2",
+        required=True,
+        max_length=100
+    )
+    quantity = discord.ui.TextInput(
+        label="Quantity",
+        placeholder="e.g. 2",
+        required=True,
+        max_length=5
+    )
+
+    def __init__(self, game_name: str):
+        super().__init__()
+        self.game_name = game_name
+
+    async def on_submit(self, interaction: discord.Interaction):
+        item_line = self.item_line.value.strip()
+        qty_str = self.quantity.value.strip()
+
+        if not qty_str.isdigit():
+            await interaction.response.send_message("❌ Quantity must be a number.", ephemeral=True)
+            return
+        qty = int(qty_str)
+        if qty <= 0:
+            await interaction.response.send_message("❌ Quantity must be at least 1.", ephemeral=True)
+            return
+
+        if "/$" not in item_line:
+            await interaction.response.send_message(
+                "❌ Could not find a price. Use lines like `Name - 1/$2`.", ephemeral=True
+            )
+            return
+        price_part = item_line.rsplit("/$", 1)[1]
+        try:
+            price = float(price_part)
+        except ValueError:
+            await interaction.response.send_message(
+                "❌ Invalid price format. Use lines like `Name - 1/$2`.", ephemeral=True
+            )
+            return
+
+        total = price * qty
+
+        order_data = {
+            "game": self.game_name,
+            "item_line": item_line,
+            "qty": qty,
+            "total": total,
+            "user_id": interaction.user.id,
+            "user_name": str(interaction.user),
+        }
+
+        view = discord.ui.View(timeout=120)
+
+        async def gcash_callback(pay_int: discord.Interaction):
+            await pay_int.response.defer()
+            order_data["payment"] = "GCash"
+            await create_order_ticket(pay_int, order_data)
+
+        async def paypal_callback(pay_int: discord.Interaction):
+            await pay_int.response.defer()
+            order_data["payment"] = "PayPal"
+            await create_order_ticket(pay_int, order_data)
+
+        gcash_btn = discord.ui.Button(label="💰 GCash", style=discord.ButtonStyle.primary)
+        paypal_btn = discord.ui.Button(label="🌍 PayPal", style=discord.ButtonStyle.primary)
+        gcash_btn.callback = gcash_callback
+        paypal_btn.callback = paypal_callback
+        view.add_item(gcash_btn)
+        view.add_item(paypal_btn)
+
+        await interaction.response.send_message(
+            f"**Order Summary**\n"
+            f"• Game: {self.game_name}\n"
+            f"• Item: {item_line}\n"
+            f"• Quantity: {qty}\n"
+            f"• Total: **${total:.2f}**\n\n"
+            f"Select a payment method:",
+            view=view,
+            ephemeral=True
+        )
 
 # ================== VOUCHING SYSTEM ==================
 class VouchModal(discord.ui.Modal, title="Leave a Vouch"):
@@ -296,7 +381,7 @@ class VouchModal(discord.ui.Modal, title="Leave a Vouch"):
 
 class VouchRequestView(discord.ui.View):
     def __init__(self, customer: discord.Member, order_channel: discord.TextChannel):
-        super().__init__(timeout=600)  # 10 minutes
+        super().__init__(timeout=600)
         self.customer = customer
         self.order_channel = order_channel
 
@@ -319,10 +404,10 @@ class VouchRequestView(discord.ui.View):
         except Exception:
             pass
 
-# ================== ORDER FLOW ==================
+# ================== ORDER FLOW (modal version) ==================
 async def start_order_flow(interaction: discord.Interaction):
     if not bot.forum_cache:
-        await interaction.followup.send("❌ No products available right now. Please try again later.", ephemeral=True)
+        await interaction.followup.send("❌ No products available right now.", ephemeral=True)
         return
 
     view = discord.ui.View(timeout=300)
@@ -330,80 +415,37 @@ async def start_order_flow(interaction: discord.Interaction):
     game_select = discord.ui.Select(placeholder="Choose a game...", options=options)
 
     async def game_select_callback(select_interaction: discord.Interaction):
-        await select_interaction.response.defer()
         selected_game = select_interaction.data["values"][0]
         content = bot.forum_cache.get(selected_game, "No content.")
 
-        await interaction.followup.send(f"**{selected_game}**\n\n{content}", ephemeral=True)
-        await interaction.followup.send(
-            "Copy the **exact line** of the item you want (e.g. `Moon Bloom Seed - 1/$2`) and add the quantity, like this:\n"
-            "`Moon Bloom Seed - 1/$2 2`",
+        await select_interaction.response.send_message(
+            f"**{selected_game}**\n\n{content}",
             ephemeral=True
         )
 
-        def check(msg):
-            return msg.author == select_interaction.user and msg.channel == select_interaction.channel
+        modal_button = discord.ui.Button(label="Enter Order Details", style=discord.ButtonStyle.success)
+        modal_view = discord.ui.View(timeout=300)
 
-        try:
-            msg = await bot.wait_for("message", check=check, timeout=120)
-            parts = msg.content.rsplit(" ", 1)
-            if len(parts) != 2 or not parts[1].isdigit():
-                await select_interaction.followup.send("Invalid format. Please include the item line and quantity.", ephemeral=True)
-                return
+        async def open_modal(btn_interaction: discord.Interaction):
+            modal = OrderDetailModal(selected_game)
+            await btn_interaction.response.send_modal(modal)
 
-            item_line = parts[0].strip()
-            qty = int(parts[1])
+        modal_button.callback = open_modal
+        modal_view.add_item(modal_button)
 
-            price = None
-            if "/$" in item_line:
-                price_part = item_line.rsplit("/$", 1)[1]
-                try:
-                    price = float(price_part)
-                except ValueError:
-                    await select_interaction.followup.send("Could not extract price from line.", ephemeral=True)
-                    return
-            else:
-                await select_interaction.followup.send("Could not find price. Use lines like `Name - 1/$2`.", ephemeral=True)
-                return
-
-            total = price * qty
-            order_data = {
-                "game": selected_game,
-                "item_line": item_line,
-                "qty": qty,
-                "total": total,
-                "user_id": select_interaction.user.id,
-                "user_name": str(select_interaction.user),
-            }
-
-            view_payment = discord.ui.View(timeout=120)
-            async def gcash_callback(pay_int: discord.Interaction):
-                await pay_int.response.defer()
-                order_data["payment"] = "GCash"
-                await create_order_ticket(pay_int, order_data)
-            async def paypal_callback(pay_int: discord.Interaction):
-                await pay_int.response.defer()
-                order_data["payment"] = "PayPal"
-                await create_order_ticket(pay_int, order_data)
-
-            gcash_btn = discord.ui.Button(label="💰 GCash", style=discord.ButtonStyle.primary)
-            paypal_btn = discord.ui.Button(label="🌍 PayPal", style=discord.ButtonStyle.primary)
-            gcash_btn.callback = gcash_callback
-            paypal_btn.callback = paypal_callback
-            view_payment.add_item(gcash_btn)
-            view_payment.add_item(paypal_btn)
-
-            await select_interaction.followup.send(
-                f"Order summary:\n- Game: {selected_game}\n- Item: {item_line}\n- Quantity: {qty}\n- Total: **${total:.2f}**\n\nSelect your payment method:",
-                view=view_payment,
-                ephemeral=True
-            )
-        except asyncio.TimeoutError:
-            await select_interaction.followup.send("Timed out.", ephemeral=True)
+        await select_interaction.followup.send(
+            "Click the button below to enter your order:",
+            view=modal_view,
+            ephemeral=True
+        )
 
     game_select.callback = game_select_callback
     view.add_item(game_select)
-    await interaction.followup.send("Select the game you want to order from:", view=view, ephemeral=True)
+    await interaction.followup.send(
+        "Select the game you want to order from:",
+        view=view,
+        ephemeral=True
+    )
 
 async def create_order_ticket(interaction: discord.Interaction, order):
     guild = interaction.guild
@@ -422,7 +464,6 @@ async def create_order_ticket(interaction: discord.Interaction, order):
         }
     )
 
-    # Order details embed
     embed = discord.Embed(
         title="📦 New Order",
         description=f"**Customer:** {interaction.user.mention}\n**Game:** {order['game']}\n**Item:** {order['item_line']}\n**Quantity:** {order['qty']}\n**Total:** ${order['total']:.2f}\n**Payment:** {order['payment']}",
@@ -430,7 +471,6 @@ async def create_order_ticket(interaction: discord.Interaction, order):
     )
     await channel.send(embed=embed)
 
-    # Send payment instructions
     if order["payment"] == "GCash":
         if os.path.isfile(GCASH_IMAGE_FILENAME):
             file = discord.File(GCASH_IMAGE_FILENAME, filename="gcash-qr.jpg")
@@ -446,7 +486,6 @@ async def create_order_ticket(interaction: discord.Interaction, order):
     else:
         await channel.send(PAYPAL_MESSAGE)
 
-    # Ping the owner
     await channel.send(f"<@{SUPPORT_USER_ID}> New order received!")
 
     await interaction.followup.send(
