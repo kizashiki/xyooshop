@@ -1,25 +1,20 @@
 import os
 import json
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
 import datetime
 import logging
 import asyncio
-from quart import Quart, request, jsonify, send_file
-from quart_cors import cors
+import threading
+from flask import Flask
 
 # ================== CONFIGURATION ==================
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD_ID = int(os.getenv('GUILD_ID', '1129463696737972267'))
-ORDER_CHANNEL_ID = int(os.getenv('ORDER_CHANNEL_ID', '0'))
-API_KEY = os.getenv('API_SECRET', 'change-me-in-production')
-PORT = int(os.getenv('PORT', 8080))
-SUPPORT_USER_ID = 592402229978333331               # Your Discord ID
-VOUCH_CHANNEL_ID = int(os.getenv('VOUCH_CHANNEL_ID', '0'))
-
-WEBSITE_URL = os.getenv('WEBSITE_URL', 'https://xyooshop.onrender.com/')
-YOUR_IMAGE_URL = "https://cdn.discordapp.com/attachments/1124170237089165325/1496726350101217402/standard.gif?ex=6a00af49&is=69ff5dc9&hm=3592503d7e5deeefd83dafb3b8caad324a2e119e1728b040fb9784e00d788718"
+FORUM_CHANNEL_ID = 1523641316020326470          # Your forum channel ID
+ORDER_CATEGORY_ID = 1404156170201075873          # Your order category ID (hardcoded)
+SUPPORT_USER_ID = 592402229978333331             # Your Discord user ID
 
 EMBED_COLOR = discord.Color.from_rgb(186, 85, 211)
 GOLD_COLOR = discord.Color.gold()
@@ -29,64 +24,45 @@ RED_COLOR = discord.Color.red()
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
-app = Quart(__name__, static_folder='static', static_url_path='/static')
-app = cors(app, allow_origin="*")
-
 CONFIG_FILE = "bot_config.json"
 
-# ---- SUPPORT CHAT STORAGE ----
-support_sessions = {}   # session_id -> list of {"from": "user"/"admin", "text": "..."}
+# ----- GCASH IMAGE SETTINGS -----
+GCASH_IMAGE_FILENAME = "gcash-qr.jpg"            # The image file must be in the bot's folder
+GCASH_NUMBER = "0948 875 4669"                   # <-- REPLACE WITH YOUR REAL NUMBER
 
-# ========== UPDATED DEFAULT PRODUCTS (Seed / Pet / Currency) ==========
-DEFAULT_PRODUCTS = [
-    # Seeds
-    {"id": 1,  "name": "Moon Bloom Seed (1x)",      "image": "mb.png",         "price": 7.00,  "category": "Seed"},
-    {"id": 2,  "name": "Ghost Pepper Seed (1x)",    "image": "gpeppers.png",    "price": 3.00,  "category": "Seed"},
-    {"id": 3,  "name": "Ghost Pepper Seed (5x)",    "image": "gpeppers.png",    "price": 10.00, "category": "Seed"},
-    {"id": 4,  "name": "Ghost Pepper Seed (10x)",   "image": "gpeppers.png",    "price": 15.00, "category": "Seed"},
-    {"id": 5,  "name": "Dragon Breath Seed (1x)",   "image": "dbreaths.png",    "price": 4.00,  "category": "Seed"},
-    {"id": 6,  "name": "Dragon Breath Seed (5x)",   "image": "dbreaths.png",    "price": 12.00, "category": "Seed"},
-    {"id": 7,  "name": "Dragon Breath Seed (10x)",  "image": "dbreaths.png",    "price": 20.00, "category": "Seed"},
-    {"id": 8,  "name": "Bamboo Seed (1k)",          "image": "bb.png", "price": 3.00,  "category": "Seed"},
-    {"id": 9,  "name": "Mushroom Seed (100)",       "image": "ms.png", "price": 3.00,  "category": "Seed"},
-    {"id": 10, "name": "Rainbow Seed (50)",         "image": "rbseed.png",     "price": 5.00,  "category": "Seed"},
-    {"id": 11, "name": "Rainbow Seed (100)",        "image": "rbseed.png",     "price": 9.00,  "category": "Seed"},
-    {"id": 12, "name": "Golden Seed (50)",          "image": "gseed.png",      "price": 3.00,  "category": "Seed"},
-    {"id": 13, "name": "Golden Seed (100)",         "image": "gseed.png",      "price": 5.00,  "category": "Seed"},
-    {"id": 14, "name": "Super Sprinkler (10)",      "image": "ss.png", "price": 4.00,  "category": "Tool"},
-    {"id": 15, "name": "Super Watering Can (10)",   "image": "sw.png", "price": 4.00,  "category": "Tool"},
-    {"id": 16, "name": "Legendary Sprinkler (10)",  "image": "ls.png", "price": 2.00,  "category": "Tool"},
-    # Pets
-    {"id": 17, "name": "Bear",                      "image": "bear.png",       "price": 3.00,  "category": "Pet"},
-    {"id": 18, "name": "Dragonfly",                 "image": "df.png",         "price": 3.00,  "category": "Pet"},
-    {"id": 19, "name": "Unicorn",                   "image": "uni.png",        "price": 4.00,  "category": "Pet"},
-    {"id": 20, "name": "Raccoon",                   "image": "racc.png",       "price": 10.00, "category": "Pet"},
-    {"id": 21, "name": "Ice Serpent",               "image": "is.png",         "price": 28.00, "category": "Pet"},
-    # Currency
-    {"id": 22, "name": "1M Sheckles",               "image": "sheckles.png",   "price": 0.99,  "category": "Currency"},
-]
+# PayPal message (plain text, so custom emojis render correctly)
+PAYPAL_MESSAGE = (
+    "<a:onlen:1347265878646853656> **Make sure to select __Friends and Family__ and not the other option, so the money won't be put on hold.**\n\n"
+    "<a:PayPal:1327594224035823677> **ALWAYS SEND RECEIPT** <a:PayPal:1327594224035823677>\n\n"
+    "https://www.paypal.com/paypalme/OfficialXyoo"
+)
+
+# ---------- DUMMY FLASK SERVER FOR RENDER ----------
+app_web = Flask(__name__)
+
+@app_web.route('/health')
+def health():
+    return "OK", 200
+
+def run_web():
+    port = int(os.environ.get('PORT', 8080))
+    app_web.run(host='0.0.0.0', port=port)
 
 def load_config():
     try:
         if os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE, "r") as f:
-                config = json.load(f)
-                if "products" not in config:
-                    config["products"] = DEFAULT_PRODUCTS.copy()
-                if "user_orders" not in config:
-                    config["user_orders"] = {}
-                return config
-    except Exception as e:
-        logger.error(f"Failed to load config: {e}")
-    return {"products": DEFAULT_PRODUCTS.copy(), "user_orders": {}}
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
 
 def save_config(config):
     try:
         with open(CONFIG_FILE, "w") as f:
             json.dump(config, f, indent=4)
-        logger.info("Config saved")
-    except Exception as e:
-        logger.error(f"Failed to save config: {e}")
+    except Exception:
+        pass
 
 class XyooBot(commands.Bot):
     def __init__(self):
@@ -95,6 +71,7 @@ class XyooBot(commands.Bot):
         intents.members = True
         super().__init__(command_prefix="!", intents=intents)
         self.config = load_config()
+        self.forum_cache = {}
 
     async def setup_hook(self):
         self.tree.add_command(ping_command)
@@ -102,10 +79,9 @@ class XyooBot(commands.Bot):
         self.tree.add_command(setup_command)
         self.tree.add_command(request_vouch_command)
         self.tree.add_command(close_command)
-        self.tree.add_command(setprice_command)
-        self.tree.add_command(addproduct_command)
-        self.tree.add_command(removeitem_command)
-        self.tree.add_command(reply_command)
+        self.tree.add_command(refresh_products_command)
+
+        self.refresh_products.start()
 
         if os.getenv('SYNC_COMMANDS', 'false').lower() == 'true':
             await self.tree.sync()
@@ -114,6 +90,42 @@ class XyooBot(commands.Bot):
             logger.info("Commands synced")
         else:
             logger.info("Skipping command sync")
+
+    @tasks.loop(minutes=5)
+    async def refresh_products(self):
+        await self._refresh_products()
+
+    @refresh_products.before_loop
+    async def before_refresh(self):
+        await self.wait_until_ready()
+
+    async def _refresh_products(self):
+        guild = self.get_guild(GUILD_ID)
+        if not guild:
+            return
+        forum = guild.get_channel(FORUM_CHANNEL_ID)
+        if not forum or not isinstance(forum, discord.ForumChannel):
+            logger.error("FORUM_CHANNEL_ID is not a forum channel")
+            return
+
+        cache = {}
+        for thread in forum.threads:
+            try:
+                messages = []
+                async for msg in thread.history(limit=2, oldest_first=True):
+                    messages.append(msg)
+                if len(messages) >= 2:
+                    cache[thread.name] = messages[1].content
+                else:
+                    starter = thread.starter_message
+                    if starter is None:
+                        starter = await thread.fetch_message(thread.id)
+                    cache[thread.name] = starter.content
+            except Exception:
+                continue
+
+        self.forum_cache = cache
+        logger.info(f"Refreshed forum cache: {len(cache)} threads")
 
 bot = XyooBot()
 
@@ -134,7 +146,7 @@ def get_main_embed():
     embed.add_field(name="📋 Available Options", value="📋 **Instructions How To Order**\n💳 **Payment Methods**\n🛍️ **Order Here**\n💰 **View Prices**", inline=False)
     embed.add_field(name="⚡ Why Choose Xyoo?", value="✅ Fast & Reliable\n🔒 Secure Payments\n🛡️ 24/7 Support\n⭐ Premium Quality", inline=True)
     embed.add_field(name="🎁 Special Perks", value="🔥 Great Prices\n📝 Customer Reviews\n🚀 Quick Delivery\n💝 Loyalty Rewards", inline=True)
-    embed.set_image(url=YOUR_IMAGE_URL)
+    embed.set_image(url=bot.config.get("image_url", ""))
     embed.set_footer(text="Xyoo Shop • Happy Shopping!")
     return embed
 
@@ -146,10 +158,10 @@ def get_tutorial_embed():
     )
     embed.add_field(
         name="📌 Step‑by‑Step Guide",
-        value="```\n1️⃣ Browse our website 🛍️\n2️⃣ Choose your game & product\n3️⃣ Add items to your cart\n4️⃣ Proceed to checkout\n5️⃣ Select your payment method (GCash or PayPal)\n6️⃣ Enter your Discord username\n7️⃣ Complete the payment & wait for delivery\n```",
+        value="```\n1️⃣ Click 'Order Here' below\n2️⃣ Choose your game\n3️⃣ Copy the item line you want from the price list\n4️⃣ Paste it and add the quantity\n5️⃣ Select payment method (GCash or PayPal)\n6️⃣ Your order ticket will be created\n```",
         inline=False
     )
-    embed.add_field(name="💡 Need Help?", value=f"📞 Contact <@{SUPPORT_USER_ID}> anytime!\nWe're here to assist you.", inline=False)
+    embed.add_field(name="💡 Need Help?", value=f"📞 Contact <@{SUPPORT_USER_ID}> anytime!", inline=False)
     embed.set_footer(text="Xyoo Shop • Happy shopping!")
     return embed
 
@@ -160,45 +172,15 @@ def get_payment_methods_embed():
     embed.set_footer(text="Xyoo Shop • Secure & Reliable Payments")
     return embed
 
-def get_order_here_embed():
-    embed = discord.Embed(title="🛍️ Order Here", description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n🎉 **Ready to shop at Xyoo?**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬", color=EMBED_COLOR)
-    embed.add_field(name="🌐 Visit Our Website", value=f"**[Click here to place your order]({WEBSITE_URL})**\n⚡ Fast Loading | 🔒 Secure Checkout", inline=False)
-    embed.add_field(name="✨ What You'll Find", value="🛍️ Browse premium products\n🔐 Secure payment gateway\n💳 Multiple payment options", inline=False)
-    embed.set_footer(text="Xyoo Shop • Thank you for shopping!")
-    return embed
-
 def get_prices_embed():
-    products = bot.config.get("products", [])
-    if not products:
-        desc = "No prices configured yet."
+    if not bot.forum_cache:
+        desc = "No products found."
     else:
-        lines = [f"• **{p['name']}**: ${p['price']:.2f}" for p in products]
-        desc = "\n".join(lines)
-    embed = discord.Embed(title="💰 Xyoo Shop – Price List", description=desc, color=EMBED_COLOR)
-    embed.set_footer(text="Prices in USD • Use /addproduct or /setprice")
-    return embed
-
-def get_order_embed(order_data, customer_discord, customer_added, member):
-    items_text = "\n".join([f"• `{item['quantity']}x` **{item['name']}** — ${item['price']:.2f}" for item in order_data.get('items', [])]) or "No items"
-    embed = discord.Embed(title="📦 New Web Order", description=f"**Order ID:** `{order_data.get('orderId')}`", color=EMBED_COLOR, timestamp=datetime.datetime.now())
-    embed.add_field(name="💰 Total", value=f"**${order_data.get('total'):.2f}**", inline=True)
-    embed.add_field(name="💳 Payment", value=order_data.get('paymentMethod', 'Unknown'), inline=True)
-    embed.add_field(name="📅 Date", value=order_data.get('date', 'Unknown'), inline=True)
-    if customer_discord:
-        status = "✅ **Added**" if customer_added else ("⚠️ **Failed to add**" if member else "❌ **Not found**")
-        embed.add_field(name="👤 Discord User", value=f"{customer_discord}\n{status}", inline=False)
-    embed.add_field(name="🛒 Items", value=items_text, inline=False)
-    embed.set_footer(text="Xyoo Shop • Web Order")
-    return embed
-
-def get_vouch_request_embed():
-    embed = discord.Embed(title="⭐ Transaction Complete!", description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n🎉 **Thank you for shopping at Xyoo Shop!**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\nWe'd love to hear about your experience!\nClick the button below to leave a vouch — it helps us a lot! 💝", color=GOLD_COLOR)
-    embed.set_footer(text="Xyoo Shop • After leaving a vouch, this thread will close automatically.")
-    return embed
-
-def get_close_embed():
-    embed = discord.Embed(title="🔒 Thread Closing", description="▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\nThis thread has been closed by the owner.\nThank you! Goodbye! 👋\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬", color=EMBED_COLOR, timestamp=datetime.datetime.now())
-    embed.set_footer(text="Xyoo Shop • Thread closed")
+        desc = ""
+        for name, content in bot.forum_cache.items():
+            desc += f"**{name}**\n{content}\n\n"
+    embed = discord.Embed(title="💰 Xyoo Shop – Price List", description=desc[:4096], color=EMBED_COLOR)
+    embed.set_footer(text="Prices are automatically read from the forum channel.")
     return embed
 
 # ================== UI COMPONENTS ==================
@@ -220,14 +202,7 @@ class XyooSelect(discord.ui.Select):
         elif selected == "payment_methods":
             await interaction.followup.send(embed=get_payment_methods_embed(), ephemeral=True)
         elif selected == "order_here":
-            personal_link = f"{WEBSITE_URL}?user={interaction.user.id}"
-            embed = discord.Embed(
-                title="🛍️ Order Here",
-                description=f"**[Click here to place your order]({personal_link})**\n⚡ Fast Loading | 🔒 Secure Checkout",
-                color=EMBED_COLOR
-            )
-            embed.set_footer(text="Xyoo Shop • Thank you for shopping!")
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            await start_order_flow(interaction)
         elif selected == "prices":
             await interaction.followup.send(embed=get_prices_embed(), ephemeral=True)
 
@@ -251,7 +226,7 @@ class PanelChannelSelect(discord.ui.ChannelSelect):
             save_config(bot.config)
             embed = get_main_embed()
             await channel.send(embed=embed, view=SelectView())
-            await interaction.followup.send(f"✅ Panel posted in {channel.mention}!\nOrder threads will appear here.", ephemeral=True)
+            await interaction.followup.send(f"✅ Panel posted in {channel.mention}!", ephemeral=True)
         except Exception as e:
             await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
 
@@ -260,81 +235,150 @@ class PanelSetupView(discord.ui.View):
         super().__init__()
         self.add_item(PanelChannelSelect())
 
-class VouchModal(discord.ui.Modal, title="⭐ Leave a Vouch"):
-    vouch_message = discord.ui.TextInput(label="Your vouch message", style=discord.TextStyle.paragraph, max_length=500, required=True)
+# ================== ORDER FLOW ==================
+async def start_order_flow(interaction: discord.Interaction):
+    if not bot.forum_cache:
+        await interaction.followup.send("❌ No products available right now. Please try again later.", ephemeral=True)
+        return
 
-    async def on_submit(self, interaction: discord.Interaction):
-        vouch_channel_id = VOUCH_CHANNEL_ID or bot.config.get("vouch_channel_id")
-        if not vouch_channel_id:
-            await interaction.response.send_message("❌ Vouch channel not configured.", ephemeral=True)
-            return
-        vouch_channel = interaction.guild.get_channel(vouch_channel_id)
-        if not vouch_channel:
-            await interaction.response.send_message("❌ Vouch channel not found.", ephemeral=True)
-            return
-        embed = discord.Embed(title="⭐ New Vouch", description=self.vouch_message.value, color=GOLD_COLOR, timestamp=datetime.datetime.now())
-        embed.set_author(name=f"{interaction.user.display_name} (@{interaction.user.name})", icon_url=interaction.user.display_avatar.url)
-        embed.add_field(name="User ID", value=f"`{interaction.user.id}`", inline=True)
-        embed.add_field(name="Thread", value=interaction.channel.mention, inline=True)
-        embed.set_footer(text="Xyoo Shop • Verified Purchase")
-        await vouch_channel.send(embed=embed)
-        await interaction.response.send_message("✅ Thank you for your vouch! Thread will close in 5 seconds...")
-        if isinstance(interaction.channel, discord.Thread):
-            asyncio.create_task(close_thread_after_delay(interaction.channel, 5))
+    view = discord.ui.View(timeout=300)
+    options = [discord.SelectOption(label=name, value=name) for name in bot.forum_cache.keys()]
+    game_select = discord.ui.Select(placeholder="Choose a game...", options=options)
 
-class VouchButton(discord.ui.Button):
-    def __init__(self):
-        super().__init__(label="Leave a Vouch", style=discord.ButtonStyle.success, emoji="⭐")
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_modal(VouchModal())
+    async def game_select_callback(select_interaction: discord.Interaction):
+        await select_interaction.response.defer()
+        selected_game = select_interaction.data["values"][0]
+        content = bot.forum_cache.get(selected_game, "No content.")
 
-class VouchRequestView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-        self.add_item(VouchButton())
+        await interaction.followup.send(f"**{selected_game}**\n\n{content}", ephemeral=True)
+        await interaction.followup.send(
+            "Copy the **exact line** of the item you want (e.g. `Moon Bloom Seed - 1/$2`) and add the quantity, like this:\n"
+            "`Moon Bloom Seed - 1/$2 2`",
+            ephemeral=True
+        )
 
-async def close_thread_after_delay(thread, seconds):
-    await asyncio.sleep(seconds)
-    try:
-        await thread.edit(archived=True, locked=True)
-    except Exception:
-        pass
+        def check(msg):
+            return msg.author == select_interaction.user and msg.channel == select_interaction.channel
 
-# ================== SUPPORT REPLY BUTTON & MODAL ==================
-class SupportReplyModal(discord.ui.Modal, title="Reply to Support Chat"):
-    reply_text = discord.ui.TextInput(
-        label="Your reply",
-        style=discord.TextStyle.paragraph,
-        max_length=500,
-        required=True,
-        placeholder="Type your reply here..."
+        try:
+            msg = await bot.wait_for("message", check=check, timeout=120)
+            parts = msg.content.rsplit(" ", 1)
+            if len(parts) != 2 or not parts[1].isdigit():
+                await select_interaction.followup.send("Invalid format. Please include the item line and quantity.", ephemeral=True)
+                return
+
+            item_line = parts[0].strip()
+            qty = int(parts[1])
+
+            price = None
+            if "/$" in item_line:
+                price_part = item_line.rsplit("/$", 1)[1]
+                try:
+                    price = float(price_part)
+                except ValueError:
+                    await select_interaction.followup.send("Could not extract price from line.", ephemeral=True)
+                    return
+            else:
+                await select_interaction.followup.send("Could not find price. Use lines like `Name - 1/$2`.", ephemeral=True)
+                return
+
+            total = price * qty
+            order_data = {
+                "game": selected_game,
+                "item_line": item_line,
+                "qty": qty,
+                "total": total,
+                "user_id": select_interaction.user.id,
+                "user_name": str(select_interaction.user),
+            }
+
+            view_payment = discord.ui.View(timeout=120)
+            async def gcash_callback(pay_int: discord.Interaction):
+                await pay_int.response.defer()
+                order_data["payment"] = "GCash"
+                await create_order_ticket(pay_int, order_data)
+            async def paypal_callback(pay_int: discord.Interaction):
+                await pay_int.response.defer()
+                order_data["payment"] = "PayPal"
+                await create_order_ticket(pay_int, order_data)
+
+            gcash_btn = discord.ui.Button(label="💰 GCash", style=discord.ButtonStyle.primary)
+            paypal_btn = discord.ui.Button(label="🌍 PayPal", style=discord.ButtonStyle.primary)
+            gcash_btn.callback = gcash_callback
+            paypal_btn.callback = paypal_callback
+            view_payment.add_item(gcash_btn)
+            view_payment.add_item(paypal_btn)
+
+            await select_interaction.followup.send(
+                f"Order summary:\n- Game: {selected_game}\n- Item: {item_line}\n- Quantity: {qty}\n- Total: **${total:.2f}**\n\nSelect your payment method:",
+                view=view_payment,
+                ephemeral=True
+            )
+        except asyncio.TimeoutError:
+            await select_interaction.followup.send("Timed out.", ephemeral=True)
+
+    game_select.callback = game_select_callback
+    view.add_item(game_select)
+    await interaction.followup.send("Select the game you want to order from:", view=view, ephemeral=True)
+
+async def create_order_ticket(interaction: discord.Interaction, order):
+    guild = interaction.guild
+    category = guild.get_channel(ORDER_CATEGORY_ID)
+    if not category:
+        await interaction.followup.send("❌ Order category not configured. Contact the owner.", ephemeral=True)
+        return
+
+    channel = await guild.create_text_channel(
+        name=f"order-{interaction.user.name}",
+        category=category,
+        overwrites={
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+        }
     )
 
-    def __init__(self, session_id: str):
-        super().__init__()
-        self.session_id = session_id
+    # Order details embed
+    embed = discord.Embed(
+        title="📦 New Order",
+        description=f"**Customer:** {interaction.user.mention}\n**Game:** {order['game']}\n**Item:** {order['item_line']}\n**Quantity:** {order['qty']}\n**Total:** ${order['total']:.2f}\n**Payment:** {order['payment']}",
+        color=EMBED_COLOR
+    )
+    await channel.send(embed=embed)
 
-    async def on_submit(self, interaction: discord.Interaction):
-        if self.session_id in support_sessions:
-            support_sessions[self.session_id].append({"from": "admin", "text": self.reply_text.value})
+    # Send payment instructions
+    if order["payment"] == "GCash":
+        if os.path.isfile(GCASH_IMAGE_FILENAME):
+            file = discord.File(GCASH_IMAGE_FILENAME, filename="gcash-qr.jpg")
+            gcash_embed = discord.Embed(
+                title="📱 GCash Payment",
+                description=f"Please send your payment to:\n**{GCASH_NUMBER}**\n\n📸 **After paying, post a screenshot of the receipt in this channel.**",
+                color=GOLD_COLOR
+            )
+            gcash_embed.set_image(url="attachment://gcash-qr.jpg")
+            await channel.send(file=file, embed=gcash_embed)
         else:
-            support_sessions[self.session_id] = [{"from": "admin", "text": self.reply_text.value}]
-        await interaction.response.send_message(f"✅ Reply sent to session `{self.session_id}`.", ephemeral=True)
+            await channel.send(f"📱 GCash Payment\nNumber: **{GCASH_NUMBER}**\n(QR image not found – please ask for it.)")
+    else:
+        await channel.send(PAYPAL_MESSAGE)
 
-class SupportReplyButton(discord.ui.Button):
-    def __init__(self, session_id: str):
-        super().__init__(label="Reply", style=discord.ButtonStyle.primary, emoji="💬")
-        self.session_id = session_id
+    # Ping the owner
+    await channel.send(f"<@{SUPPORT_USER_ID}> New order received!")
 
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_modal(SupportReplyModal(self.session_id))
+    await interaction.followup.send(
+        f"✅ Order ticket created: {channel.mention}. Please follow the payment instructions and post your receipt there.",
+        ephemeral=True
+    )
 
-class SupportReplyView(discord.ui.View):
-    def __init__(self, session_id: str):
-        super().__init__(timeout=None)
-        self.add_item(SupportReplyButton(session_id))
+# ================== REFRESH COMMAND ==================
+@app_commands.command(name="refreshproducts", description="[Admin] Refresh the products cache immediately from the forum")
+@app_commands.default_permissions(administrator=True)
+async def refresh_products_command(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    await bot._refresh_products()
+    await interaction.followup.send(f"✅ Products refreshed! {len(bot.forum_cache)} games loaded.", ephemeral=True)
 
-# ================== SLASH COMMANDS ==================
+# ================== OTHER SLASH COMMANDS ==================
 @app_commands.command(name="ping", description="🏓 Ping the bot")
 async def ping_command(interaction: discord.Interaction):
     await interaction.response.send_message(f"🏓 Pong! {bot.latency*1000:.0f}ms", ephemeral=True)
@@ -356,90 +400,12 @@ async def setup_command(interaction: discord.Interaction):
 @app_commands.command(name="request-vouch", description="[Admin] Ask for vouch (auto-closes)")
 @app_commands.default_permissions(administrator=True)
 async def request_vouch_command(interaction: discord.Interaction):
-    await interaction.response.defer()
-    if not isinstance(interaction.channel, discord.Thread):
-        await interaction.followup.send("❌ Use inside an order thread.", ephemeral=True)
-        return
-    await interaction.followup.send(embed=get_vouch_request_embed(), view=VouchRequestView())
+    pass
 
 @app_commands.command(name="close", description="[Admin] Close thread without vouch")
 @app_commands.default_permissions(administrator=True)
 async def close_command(interaction: discord.Interaction):
-    await interaction.response.defer()
-    if not isinstance(interaction.channel, discord.Thread):
-        await interaction.followup.send("❌ Use inside a thread.", ephemeral=True)
-        return
-    await interaction.followup.send(embed=get_close_embed())
-    asyncio.create_task(close_thread_after_delay(interaction.channel, 5))
-
-# ---------- PRICE MANAGEMENT ----------
-@app_commands.command(name="setprice", description="[Admin] Change the price of an existing product")
-@app_commands.default_permissions(administrator=True)
-@app_commands.describe(item="Product name", price="New price in USD")
-async def setprice_command(interaction: discord.Interaction, item: str, price: float):
-    if price < 0:
-        await interaction.response.send_message("❌ Price cannot be negative.", ephemeral=True)
-        return
-    products = bot.config.setdefault("products", [])
-    for p in products:
-        if p["name"] == item:
-            p["price"] = round(price, 2)
-            save_config(bot.config)
-            await interaction.response.send_message(f"✅ Price for **{item}** set to **${price:.2f}** USD.", ephemeral=True)
-            return
-    await interaction.response.send_message(f"❌ Item **{item}** not found. Use /addproduct first.", ephemeral=True)
-
-@app_commands.command(name="addproduct", description="[Admin] Add a new product (attach the image)")
-@app_commands.default_permissions(administrator=True)
-@app_commands.describe(name="Product name", price="Price in USD", category="Category (Seed, Pet, Currency)", image="Attach the product image (PNG/JPG)")
-async def addproduct_command(interaction: discord.Interaction, name: str, price: float, category: str, image: discord.Attachment):
-    if price < 0:
-        await interaction.response.send_message("❌ Price cannot be negative.", ephemeral=True)
-        return
-    products = bot.config.setdefault("products", [])
-    if any(p["name"] == name for p in products):
-        await interaction.response.send_message(f"❌ Product **{name}** already exists. Use /setprice to update it.", ephemeral=True)
-        return
-    ext = os.path.splitext(image.filename)[1]
-    clean_name = name.lower().replace(" ", "_").replace("'", "")
-    filename = f"{clean_name}{ext}"
-    filepath = os.path.join("static", filename)
-    await image.save(filepath)
-    new_id = max((p["id"] for p in products), default=0) + 1
-    new_product = {
-        "id": new_id,
-        "name": name,
-        "price": round(price, 2),
-        "image": filename,
-        "category": category
-    }
-    products.append(new_product)
-    save_config(bot.config)
-    await interaction.response.send_message(f"✅ Added **{name}** (${price:.2f}) with ID {new_id}. Image: `{filename}`", ephemeral=True)
-
-@app_commands.command(name="removeitem", description="[Admin] Remove a product from the shop")
-@app_commands.default_permissions(administrator=True)
-@app_commands.describe(item="Product name to remove")
-async def removeitem_command(interaction: discord.Interaction, item: str):
-    products = bot.config.setdefault("products", [])
-    for i, p in enumerate(products):
-        if p["name"] == item:
-            del products[i]
-            save_config(bot.config)
-            await interaction.response.send_message(f"🗑️ Removed **{item}** from the shop.", ephemeral=True)
-            return
-    await interaction.response.send_message(f"❌ Product **{item}** not found.", ephemeral=True)
-
-# ---------- SUPPORT REPLY (fallback command, not needed with the button) ----------
-@app_commands.command(name="reply", description="[Admin] Reply to a support chat session (fallback)")
-@app_commands.default_permissions(administrator=True)
-@app_commands.describe(session="Session ID (shown in the DM)", message="Your reply text")
-async def reply_command(interaction: discord.Interaction, session: str, message: str):
-    if session not in support_sessions:
-        await interaction.response.send_message("❌ Unknown session ID.", ephemeral=True)
-        return
-    support_sessions[session].append({"from": "admin", "text": message})
-    await interaction.response.send_message(f"✅ Reply sent to session `{session}`.", ephemeral=True)
+    pass
 
 @bot.command(name="sync")
 @commands.is_owner()
@@ -448,183 +414,15 @@ async def sync_commands(ctx):
     await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
     await ctx.send("✅ Commands synced!")
 
-def find_member(guild, query):
-    if not query: return None
-    query = query.strip()
-    if query.isdigit():
-        m = guild.get_member(int(query))
-        if m: return m
-    query_lower = query.lower()
-    for m in guild.members:
-        if (m.name.lower() == query_lower or m.display_name.lower() == query_lower or (m.global_name and m.global_name.lower() == query_lower)):
-            return m
-    for m in guild.members:
-        if query_lower in m.name.lower() or query_lower in m.display_name.lower() or (m.global_name and query_lower in m.global_name.lower()):
-            return m
-    return None
-
-async def process_order(order_data):
-    await bot.wait_until_ready()
-    guild = bot.get_guild(GUILD_ID)
-    if not guild: return None
-    channel = None
-    if ORDER_CHANNEL_ID: channel = guild.get_channel(ORDER_CHANNEL_ID)
-    if not channel: channel = guild.get_channel(bot.config.get("order_channel_id"))
-    if not channel: channel = discord.utils.get(guild.text_channels, name="orders")
-    if not channel: channel = guild.text_channels[0]
-    if not channel: return None
-
-    thread = await channel.create_thread(
-        name=f"🛍️ ORDER - {order_data.get('orderId', 'Unknown')}",
-        type=discord.ChannelType.private_thread,
-        auto_archive_duration=1440
-    )
-    support = guild.get_member(SUPPORT_USER_ID)
-    if support: await thread.add_user(support)
-
-    customer_discord = order_data.get('discordUser', '').strip()
-    customer_added = False
-    member = None
-    if customer_discord:
-        member = find_member(guild, customer_discord)
-        if member:
-            await channel.set_permissions(member, send_messages_in_threads=True, read_messages=True, attach_files=True)
-            await thread.add_user(member)
-            customer_added = True
-
-    embed = get_order_embed(order_data, customer_discord, customer_added, member)
-    await thread.send(embed=embed)
-
-    ping = f"📢 New order! <@{SUPPORT_USER_ID}>"
-    if customer_discord:
-        if customer_added:
-            ping += f"\n{member.mention} Please send your payment receipt here to claim your order."
-        else:
-            ping += f"\n⚠️ Customer `{customer_discord}` was not found. They may need to be added manually."
-    await thread.send(ping)
-    return thread.id
-
-# ================== QUART ROUTES ==================
-@app.route('/')
-async def index(): return await send_file('index.html')
-
-@app.route('/payment-gcash.html')
-async def gcash(): return await send_file('payment-gcash.html')
-
-@app.route('/payment-paypal.html')
-async def paypal(): return await send_file('payment-paypal.html')
-
-@app.route('/health')
-async def health(): return jsonify({"status": "ok"}), 200
-
-@app.route('/api/products')
-async def get_products():
-    products = bot.config.get("products", [])
-    return jsonify(products)
-
-@app.route('/api/prices')
-async def get_prices_legacy():
-    products = bot.config.get("products", [])
-    prices = {p["name"]: p["price"] for p in products}
-    return jsonify(prices)
-
-@app.route('/api/user/<int:user_id>')
-async def get_user(user_id):
-    guild = bot.get_guild(GUILD_ID)
-    if not guild:
-        return jsonify({"error": "Guild not found"}), 404
-    member = guild.get_member(user_id)
-    if not member:
-        return jsonify({"error": "User not found"}), 404
-    return jsonify({
-        "id": member.id,
-        "username": member.name,
-        "display_name": member.display_name,
-        "avatar_url": str(member.display_avatar.url)
-    })
-
-@app.route('/api/user/orders/<int:user_id>', methods=['GET'])
-async def get_user_orders(user_id):
-    guild = bot.get_guild(GUILD_ID)
-    if not guild or not guild.get_member(user_id):
-        return jsonify({"error": "User not found"}), 404
-    orders = bot.config.get("user_orders", {}).get(str(user_id), [])
-    return jsonify(orders)
-
-@app.route('/api/user/orders', methods=['POST'])
-async def save_user_order():
-    if request.headers.get('X-API-Key') != API_KEY:
-        return jsonify({"error": "Unauthorized"}), 401
-    data = await request.get_json()
-    user_id = data.get('user_id')
-    if not user_id:
-        return jsonify({"error": "user_id required"}), 400
-    guild = bot.get_guild(GUILD_ID)
-    if not guild or not guild.get_member(int(user_id)):
-        return jsonify({"error": "User not in server"}), 404
-    if "user_orders" not in bot.config:
-        bot.config["user_orders"] = {}
-    user_orders = bot.config["user_orders"].setdefault(str(user_id), [])
-    order_copy = {k: v for k, v in data.items() if k != 'user_id'}
-    user_orders.append(order_copy)
-    save_config(bot.config)
-    return jsonify({"status": "ok"}), 201
-
-# ---------- SUPPORT CHAT API ----------
-@app.route('/api/support/send', methods=['POST'])
-async def support_send():
-    if request.headers.get('X-API-Key') != API_KEY:
-        return jsonify({"error": "Unauthorized"}), 401
-    data = await request.get_json()
-    session_id = data.get('session_id')
-    user_message = data.get('message')
-    if not session_id or not user_message:
-        return jsonify({"error": "Missing session_id or message"}), 400
-
-    if session_id not in support_sessions:
-        support_sessions[session_id] = []
-    support_sessions[session_id].append({"from": "user", "text": user_message})
-
-    support_user = bot.get_user(SUPPORT_USER_ID)
-    if support_user:
-        try:
-            embed = discord.Embed(
-                title="💬 New Support Message",
-                description=f"**Session:** `{session_id}`\n**Message:** {user_message}",
-                color=EMBED_COLOR
-            )
-            embed.set_footer(text="Click the Reply button below to respond instantly")
-            view = SupportReplyView(session_id)
-            await support_user.send(embed=embed, view=view)
-        except Exception as e:
-            logger.error(f"Failed to DM support user: {e}")
-
-    return jsonify({"status": "ok"}), 200
-
-@app.route('/api/support/messages/<session_id>', methods=['GET'])
-async def support_messages(session_id):
-    msgs = support_sessions.get(session_id, [])
-    return jsonify(msgs)
-
-@app.route('/api/order', methods=['POST'])
-async def receive_order():
-    if request.headers.get('X-API-Key') != API_KEY:
-        return jsonify({"error": "Unauthorized"}), 401
-    data = await request.get_json()
-    thread_id = await process_order(data)
-    return jsonify({"status": "ok", "thread_id": str(thread_id) if thread_id else None}), 200
-
-@bot.event
-async def on_ready():
-    logger.info(f"✅ Bot online as {bot.user}")
-
+# ================== STARTUP ==================
 async def main():
-    await asyncio.gather(
-        bot.start(DISCORD_TOKEN),
-        app.run_task(host='0.0.0.0', port=PORT)
-    )
+    # Start the dummy web server in a thread for Render
+    t = threading.Thread(target=run_web)
+    t.daemon = True
+    t.start()
+    await bot.start(DISCORD_TOKEN)
 
 if __name__ == "__main__":
-    if not DISCORD_TOKEN or not API_KEY:
-        raise ValueError("Missing DISCORD_TOKEN or API_SECRET environment variables!")
+    if not DISCORD_TOKEN:
+        raise ValueError("Missing DISCORD_TOKEN environment variable!")
     asyncio.run(main())
