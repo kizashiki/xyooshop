@@ -162,19 +162,13 @@ def parse_items(content: str):
 # ================== EMBED TEMPLATES ==================
 def get_main_embed():
     embed = discord.Embed(
-        title="🤖 Xyoo Auto‑Shop",
-        description=(
-            "```css\n"
-            "▸ NEXT-GEN ORDER SYSTEM\n"
-            "```\n"
-            "Welcome to the future of shopping.\n"
-            "Select an option below to begin."
-        ),
+        title="🤖 Xyoo Shop",
+        description="Welcome to Xyoo Shop. Please select an option below to get started.",
         color=CYBER_PURPLE,
         timestamp=datetime.datetime.now()
     )
     embed.set_image(url=bot.config.get("image_url", ""))
-    embed.set_footer(text="Xyoo Shop • Automated")
+    embed.set_footer(text="Xyoo Shop • Professional Service")
     return embed
 
 # ================== UI COMPONENTS ==================
@@ -300,15 +294,30 @@ async def start_order_flow(interaction: discord.Interaction):
                     await pay_int.response.defer()
                     order_data["payment"] = "GCash"
                     await create_order_ticket(pay_int, order_data)
-                    embed_done = discord.Embed(title="✅ Order Created", description="Check your private ticket channel.", color=GREEN_COLOR)
-                    await original_msg.edit(embed=embed_done, view=None)
+
+                    # Order confirmation embed (with full summary)
+                    embed_confirm = discord.Embed(title="✅ Order Created", color=GREEN_COLOR)
+                    embed_confirm.add_field(name="Game", value=order_data['game'], inline=True)
+                    embed_confirm.add_field(name="Item", value=order_data['item_line'], inline=False)
+                    embed_confirm.add_field(name="Quantity", value=str(order_data['qty']), inline=True)
+                    embed_confirm.add_field(name="Total", value=f"${order_data['total']:.2f}", inline=True)
+                    embed_confirm.add_field(name="Payment", value="GCash", inline=True)
+                    embed_confirm.set_footer(text="Check your private ticket channel for payment instructions.")
+                    await original_msg.edit(embed=embed_confirm, view=None)
 
                 async def paypal_cb(pay_int: discord.Interaction):
                     await pay_int.response.defer()
                     order_data["payment"] = "PayPal"
                     await create_order_ticket(pay_int, order_data)
-                    embed_done = discord.Embed(title="✅ Order Created", description="Check your private ticket channel.", color=GREEN_COLOR)
-                    await original_msg.edit(embed=embed_done, view=None)
+
+                    embed_confirm = discord.Embed(title="✅ Order Created", color=GREEN_COLOR)
+                    embed_confirm.add_field(name="Game", value=order_data['game'], inline=True)
+                    embed_confirm.add_field(name="Item", value=order_data['item_line'], inline=False)
+                    embed_confirm.add_field(name="Quantity", value=str(order_data['qty']), inline=True)
+                    embed_confirm.add_field(name="Total", value=f"${order_data['total']:.2f}", inline=True)
+                    embed_confirm.add_field(name="Payment", value="PayPal", inline=True)
+                    embed_confirm.set_footer(text="Check your private ticket channel for payment instructions.")
+                    await original_msg.edit(embed=embed_confirm, view=None)
 
                 gcash_btn = discord.ui.Button(label="💰 GCash", style=discord.ButtonStyle.primary)
                 paypal_btn = discord.ui.Button(label="🌍 PayPal", style=discord.ButtonStyle.primary)
