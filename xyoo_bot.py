@@ -30,9 +30,9 @@ ORDER_COUNTER_FILE = "order_counter.json"
 
 # ----- GCASH IMAGE SETTINGS -----
 GCASH_IMAGE_FILENAME = "gcash-qr.jpg"
-GCASH_NUMBER = "0948 875 4669"   # replace with your real number
+GCASH_NUMBER = "0948 875 4669"   # replace with yours
 
-# PayPal message (plain text – will be used inside an embed)
+# PayPal message (plain text – used inside an embed)
 PAYPAL_MESSAGE = (
     "Make sure to select **__Friends and Family__ and not the other option**, so the money won't be put on hold.\n\n"
     "ALWAYS SEND RECEIPT\n\n"
@@ -203,7 +203,7 @@ class XyooSelect(discord.ui.Select):
 
 class SelectView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=None)
+        super().__init__(timeout=None)   # Permanent panel
         self.add_item(XyooSelect())
 
 class PanelChannelSelect(discord.ui.ChannelSelect):
@@ -227,21 +227,21 @@ class PanelSetupView(discord.ui.View):
         super().__init__()
         self.add_item(PanelChannelSelect())
 
-# ================== ORDER FLOW (Single Ephemeral Embed Dialog) ==================
+# ================== ORDER FLOW (Guided dialog) ==================
 async def start_order_flow(interaction: discord.Interaction):
     if not bot.forum_cache:
         await interaction.followup.send("❌ No products available.", ephemeral=True)
         return
 
-    await interaction.followup.send("```ini\n[ Initializing System... ]\n```", ephemeral=True)
-    original_msg = await interaction.original_response()
-
     options = [discord.SelectOption(label=name, value=name) for name in bot.forum_cache.keys()]
     game_select = discord.ui.Select(placeholder="🎮 Select game...", options=options)
     view = discord.ui.View(timeout=300)
     view.add_item(game_select)
-    embed = discord.Embed(title="🛍️ Auto‑Shop – Select Game", color=CYBER_PURPLE)
-    await original_msg.edit(content=None, embed=embed, view=view)
+
+    # Step 1: game selection with guide
+    embed = discord.Embed(title="🛍️ Auto‑Shop – Step 1", description="🎮 **Choose your game** ⬇️", color=CYBER_PURPLE)
+    await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+    original_msg = await interaction.original_response()
 
     async def on_game_select(sel_inter: discord.Interaction):
         game = sel_inter.data["values"][0]
@@ -251,13 +251,24 @@ async def start_order_flow(interaction: discord.Interaction):
             await sel_inter.response.edit_message(content="No items found. Contact admin.", view=None, embed=None)
             return
 
+        # Step 2: item selection
         item_opts = [discord.SelectOption(label=it["label"][:100], value=it["line"]) for it in items]
         item_select = discord.ui.Select(placeholder="📦 Select item...", options=item_opts)
+        embed_item = discord.Embed(title=f"🎮 {game} – Step 2", description="📦 **Select the item you want to buy** ⬇️", color=CYBER_PURPLE)
+        item_view = discord.ui.View(timeout=300)
+        item_view.add_item(item_select)
+        await sel_inter.response.edit_message(embed=embed_item, view=item_view)
 
         async def on_item_select(item_inter: discord.Interaction):
             item_line = item_inter.data["values"][0]
+
+            # Step 3: quantity selection
             qty_opts = [discord.SelectOption(label=str(i), value=str(i)) for i in range(1, 11)]
             qty_select = discord.ui.Select(placeholder="🔢 Quantity", options=qty_opts)
+            embed_qty = discord.Embed(title=f"📦 {item_line} – Step 3", description="🔢 **How many?** ⬇️", color=CYBER_PURPLE)
+            qty_view = discord.ui.View(timeout=120)
+            qty_view.add_item(qty_select)
+            await item_inter.response.edit_message(embed=embed_qty, view=qty_view)
 
             async def on_qty_select(qty_inter: discord.Interaction):
                 qty = int(qty_inter.data["values"][0])
@@ -282,7 +293,9 @@ async def start_order_flow(interaction: discord.Interaction):
                     "user_name": str(qty_inter.user),
                 }
 
+                # Step 4: payment selection
                 pay_view = discord.ui.View(timeout=120)
+
                 async def gcash_cb(pay_int: discord.Interaction):
                     await pay_int.response.defer()
                     order_data["payment"] = "GCash"
@@ -309,21 +322,13 @@ async def start_order_flow(interaction: discord.Interaction):
                 embed_summary.add_field(name="Item", value=item_line, inline=False)
                 embed_summary.add_field(name="Qty", value=qty, inline=True)
                 embed_summary.add_field(name="Total", value=f"${total:.2f}", inline=True)
-                embed_summary.set_footer(text="Select payment method below")
+                embed_summary.set_footer(text="💳 Select payment method below")
 
                 await qty_inter.response.edit_message(embed=embed_summary, view=pay_view)
 
             qty_select.callback = on_qty_select
-            qty_view = discord.ui.View(timeout=120)
-            qty_view.add_item(qty_select)
-            embed_qty = discord.Embed(title=f"📦 {item_line}", description="Select quantity:", color=CYBER_PURPLE)
-            await item_inter.response.edit_message(embed=embed_qty, view=qty_view)
 
         item_select.callback = on_item_select
-        item_view = discord.ui.View(timeout=300)
-        item_view.add_item(item_select)
-        embed_item = discord.Embed(title=f"🎮 {game} – Items", color=CYBER_PURPLE)
-        await sel_inter.response.edit_message(embed=embed_item, view=item_view)
 
     game_select.callback = on_game_select
 
@@ -335,6 +340,8 @@ class TicketControlView(discord.ui.View):
         self.customer = customer
         self.channel = channel
         self.status = "pending"
+        self.dashboard_msg = None
+        self.payment_msg = None
 
     async def update_ticket_embed(self, interaction=None):
         status_map = {
@@ -348,11 +355,27 @@ class TicketControlView(discord.ui.View):
         embed.add_field(name="Status", value=status_text, inline=False)
         embed.add_field(name="Customer", value=self.customer.mention, inline=True)
         embed.set_footer(text="Xyoo Auto‑Shop")
+
+        # Remove payment image if not pending
+        if self.status != "pending":
+            embed.set_image(url=None)
+
+        # Auto‑delete the separate payment instructions (PayPal) when status leaves pending
+        if self.payment_msg and self.status != "pending":
+            try:
+                await self.payment_msg.delete()
+            except (discord.NotFound, discord.HTTPException):
+                pass
+            self.payment_msg = None
+
         self.update_buttons()
+
         if interaction:
             await interaction.response.edit_message(embed=embed, view=self)
         else:
-            await self.channel.send(embed=embed, view=self)
+            # For initial send or non-interaction edit, update the stored dashboard message
+            if self.dashboard_msg:
+                await self.dashboard_msg.edit(embed=embed, view=self)
 
     def update_buttons(self):
         self.clear_items()
@@ -497,6 +520,7 @@ async def create_order_ticket(interaction: discord.Interaction, order):
     )
 
     control_view = TicketControlView(order_id, interaction.user, channel)
+
     embed = discord.Embed(title=f"🧾 Order {order_id}", color=CYBER_PURPLE,
                           description="**Thank you for your order!**\nPlease complete payment below.")
     embed.add_field(name="Game", value=order['game'], inline=True)
@@ -507,30 +531,29 @@ async def create_order_ticket(interaction: discord.Interaction, order):
     embed.add_field(name="Status", value="🟡 Pending Payment", inline=False)
     embed.set_footer(text="Xyoo Auto‑Shop • Automated")
 
-    # Send the order dashboard and payment instructions
     if order["payment"] == "GCash":
         if os.path.isfile(GCASH_IMAGE_FILENAME):
             file = discord.File(GCASH_IMAGE_FILENAME, filename="gcash-qr.jpg")
             embed.set_image(url="attachment://gcash-qr.jpg")
-            await channel.send(embed=embed, file=file, view=control_view)
+            dashboard_msg = await channel.send(embed=embed, file=file, view=control_view)
         else:
-            await channel.send(embed=embed, view=control_view)
+            dashboard_msg = await channel.send(embed=embed, view=control_view)
             await channel.send(f"📱 GCash Payment\nNumber: **{GCASH_NUMBER}**\n(QR image not found)")
+        control_view.dashboard_msg = dashboard_msg
     else:
-        # PayPal: send order embed first, then PayPal instructions in a separate embed
-        await channel.send(embed=embed, view=control_view)
-
-        # PayPal payment embed (same style as GCash)
+        dashboard_msg = await channel.send(embed=embed, view=control_view)
         paypal_embed = discord.Embed(
             title="🌍 PayPal Payment",
             description=PAYPAL_MESSAGE,
             color=CYBER_PURPLE
         )
-        await channel.send(embed=paypal_embed)
+        payment_msg = await channel.send(embed=paypal_embed)
+        control_view.dashboard_msg = dashboard_msg
+        control_view.payment_msg = payment_msg
 
     await channel.send(f"<@{SUPPORT_USER_ID}> New order!", delete_after=5)
 
-# ================== SLASH COMMANDS (simplified) ==================
+# ================== SLASH COMMANDS ==================
 @app_commands.command(name="refreshproducts", description="[Admin] Refresh product cache")
 @app_commands.default_permissions(administrator=True)
 async def refresh_products_command(interaction: discord.Interaction):
