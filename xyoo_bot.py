@@ -17,12 +17,10 @@ ORDER_CATEGORY_ID = 1404156170201075873
 SUPPORT_USER_ID = 592402229978333331
 VOUCH_CHANNEL_ID = 1393165027707588749
 
-# Futuristic theme colors
 CYBER_PURPLE = discord.Color.from_rgb(186, 85, 211)
 GOLD_COLOR = discord.Color.gold()
 GREEN_COLOR = discord.Color.green()
 RED_COLOR = discord.Color.red()
-BLUE_COLOR = discord.Color.blue()
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -32,11 +30,12 @@ ORDER_COUNTER_FILE = "order_counter.json"
 
 # ----- GCASH IMAGE SETTINGS -----
 GCASH_IMAGE_FILENAME = "gcash-qr.jpg"
-GCASH_NUMBER = "0948 875 4669"   # replace with yours
+GCASH_NUMBER = "0948 875 4669"   # replace with your real number
 
+# PayPal message (plain text – will be used inside an embed)
 PAYPAL_MESSAGE = (
-    "<a:onlen:1347265878646853656> **Make sure to select __Friends and Family__ and not the other option, so the money won't be put on hold.**\n\n"
-    "<a:PayPal~1:1327594224035823677> **ALWAYS SEND RECEIPT** <a:PayPal~1:1327594224035823677>\n\n"
+    "Make sure to select **__Friends and Family__ and not the other option**, so the money won't be put on hold.\n\n"
+    "ALWAYS SEND RECEIPT\n\n"
     "https://www.paypal.com/paypalme/OfficialXyoo"
 )
 
@@ -92,7 +91,6 @@ class XyooBot(commands.Bot):
         self.tree.add_command(ping_command)
         self.tree.add_command(xyoo_command)
         self.tree.add_command(setup_command)
-        # We no longer need /request-vouch and /close as they are built into the dashboard
         self.tree.add_command(refresh_products_command)
 
         self.refresh_products.start()
@@ -238,7 +236,6 @@ async def start_order_flow(interaction: discord.Interaction):
     await interaction.followup.send("```ini\n[ Initializing System... ]\n```", ephemeral=True)
     original_msg = await interaction.original_response()
 
-    # Step 1: Game select
     options = [discord.SelectOption(label=name, value=name) for name in bot.forum_cache.keys()]
     game_select = discord.ui.Select(placeholder="🎮 Select game...", options=options)
     view = discord.ui.View(timeout=300)
@@ -285,7 +282,6 @@ async def start_order_flow(interaction: discord.Interaction):
                     "user_name": str(qty_inter.user),
                 }
 
-                # Payment buttons
                 pay_view = discord.ui.View(timeout=120)
                 async def gcash_cb(pay_int: discord.Interaction):
                     await pay_int.response.defer()
@@ -331,17 +327,16 @@ async def start_order_flow(interaction: discord.Interaction):
 
     game_select.callback = on_game_select
 
-# ================== TICKET DASHBOARD (Futuristic Admin Panel) ==================
+# ================== TICKET DASHBOARD ==================
 class TicketControlView(discord.ui.View):
     def __init__(self, order_id, customer, channel):
         super().__init__(timeout=None)
         self.order_id = order_id
         self.customer = customer
         self.channel = channel
-        self.status = "pending"  # pending, paid, delivered, completed
+        self.status = "pending"
 
     async def update_ticket_embed(self, interaction=None):
-        # Build status embed
         status_map = {
             "pending": ("🟡 Pending Payment", "Please complete payment."),
             "paid": ("🟢 Payment Received", "Processing your order..."),
@@ -349,20 +344,17 @@ class TicketControlView(discord.ui.View):
             "completed": ("✅ Completed", "Ticket closed."),
         }
         status_text, desc = status_map.get(self.status, ("Unknown", ""))
-
         embed = discord.Embed(title=f"🧾 Order {self.order_id}", color=CYBER_PURPLE, description=desc)
         embed.add_field(name="Status", value=status_text, inline=False)
         embed.add_field(name="Customer", value=self.customer.mention, inline=True)
         embed.set_footer(text="Xyoo Auto‑Shop")
-        # Disable/enable buttons based on status
         self.update_buttons()
         if interaction:
             await interaction.response.edit_message(embed=embed, view=self)
         else:
-            await self.channel.send(embed=embed, view=self)   # usually only for initial send
+            await self.channel.send(embed=embed, view=self)
 
     def update_buttons(self):
-        # First remove all buttons
         self.clear_items()
         if self.status == "pending":
             self.add_item(MarkPaidButton(self))
@@ -370,7 +362,6 @@ class TicketControlView(discord.ui.View):
             self.add_item(MarkDeliveredButton(self))
         elif self.status == "delivered":
             self.add_item(RequestVouchButton(self))
-        # Close button always visible except when completed
         if self.status != "completed":
             self.add_item(CloseTicketButton(self, style=discord.ButtonStyle.danger))
 
@@ -407,13 +398,10 @@ class RequestVouchButton(discord.ui.Button):
         if not interaction.user.guild_permissions.administrator and interaction.user.id != SUPPORT_USER_ID:
             await interaction.response.send_message("❌ Only admins can use this.", ephemeral=True)
             return
-        # Send vouch request to customer
         vouch_view = VouchRequestView(self.parent.customer, self.parent.channel)
         embed = discord.Embed(title="🌟 Vouch Request", color=GOLD_COLOR,
                               description=f"{self.parent.customer.mention}, please leave a vouch about your experience!")
         await self.parent.channel.send(embed=embed, view=vouch_view)
-        # Disable button and update status to completed after vouch? We'll let the vouch modal handle channel close.
-        # We'll set status to completed only after channel deleted, but here we just leave.
         await interaction.response.send_message("✅ Vouch request sent.", ephemeral=True)
 
 class CloseTicketButton(discord.ui.Button):
@@ -431,7 +419,7 @@ class CloseTicketButton(discord.ui.Button):
         await asyncio.sleep(3)
         await self.parent.channel.delete()
 
-# ================== VOUCH SYSTEM (unchanged but integrated) ==================
+# ================== VOUCH SYSTEM ==================
 class VouchModal(discord.ui.Modal, title="Leave a Vouch"):
     rating = discord.ui.TextInput(label="Rating (1-5)", placeholder="Enter a number from 1 to 5", required=True, min_length=1, max_length=1)
     review = discord.ui.TextInput(label="Your Review", style=discord.TextStyle.paragraph, placeholder="Tell us about your experience...", required=True, max_length=500)
@@ -494,7 +482,6 @@ async def create_order_ticket(interaction: discord.Interaction, order):
         await interaction.followup.send("❌ Order category not configured.", ephemeral=True)
         return
 
-    # Increment order counter
     bot.order_counter += 1
     save_order_counter(bot.order_counter)
     order_id = f"#{bot.order_counter:04d}"
@@ -509,7 +496,6 @@ async def create_order_ticket(interaction: discord.Interaction, order):
         }
     )
 
-    # Send the futuristic dashboard embed with admin controls
     control_view = TicketControlView(order_id, interaction.user, channel)
     embed = discord.Embed(title=f"🧾 Order {order_id}", color=CYBER_PURPLE,
                           description="**Thank you for your order!**\nPlease complete payment below.")
@@ -521,7 +507,7 @@ async def create_order_ticket(interaction: discord.Interaction, order):
     embed.add_field(name="Status", value="🟡 Pending Payment", inline=False)
     embed.set_footer(text="Xyoo Auto‑Shop • Automated")
 
-    # Payment instructions
+    # Send the order dashboard and payment instructions
     if order["payment"] == "GCash":
         if os.path.isfile(GCASH_IMAGE_FILENAME):
             file = discord.File(GCASH_IMAGE_FILENAME, filename="gcash-qr.jpg")
@@ -531,10 +517,17 @@ async def create_order_ticket(interaction: discord.Interaction, order):
             await channel.send(embed=embed, view=control_view)
             await channel.send(f"📱 GCash Payment\nNumber: **{GCASH_NUMBER}**\n(QR image not found)")
     else:
+        # PayPal: send order embed first, then PayPal instructions in a separate embed
         await channel.send(embed=embed, view=control_view)
-        await channel.send(PAYPAL_MESSAGE)
 
-    # Notify support
+        # PayPal payment embed (same style as GCash)
+        paypal_embed = discord.Embed(
+            title="🌍 PayPal Payment",
+            description=PAYPAL_MESSAGE,
+            color=CYBER_PURPLE
+        )
+        await channel.send(embed=paypal_embed)
+
     await channel.send(f"<@{SUPPORT_USER_ID}> New order!", delete_after=5)
 
 # ================== SLASH COMMANDS (simplified) ==================
@@ -563,7 +556,7 @@ async def setup_command(interaction: discord.Interaction):
     view = PanelSetupView()
     await interaction.followup.send("📌 Select a channel:", view=view, ephemeral=True)
 
-# Old /request-vouch and /close no longer needed, but kept for backward compat
+# Legacy commands redirect to dashboard
 @app_commands.command(name="request-vouch", description="[Admin] Ask for vouch (legacy)")
 @app_commands.default_permissions(administrator=True)
 async def request_vouch_command(interaction: discord.Interaction):
