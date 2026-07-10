@@ -15,6 +15,7 @@ GUILD_ID = int(os.getenv('GUILD_ID', '1129463696737972267'))
 FORUM_CHANNEL_ID = 1523641316020326470          # Your forum channel ID
 ORDER_CATEGORY_ID = 1404156170201075873          # Your order category ID (hardcoded)
 SUPPORT_USER_ID = 592402229978333331             # Your Discord user ID
+VOUCH_CHANNEL_ID = 1393165027707588749           # Your vouch channel ID
 
 EMBED_COLOR = discord.Color.from_rgb(186, 85, 211)
 GOLD_COLOR = discord.Color.gold()
@@ -190,7 +191,7 @@ class XyooSelect(discord.ui.Select):
             discord.SelectOption(label="Instructions How To Order", value="tutorial", emoji="📋"),
             discord.SelectOption(label="Payment Methods Available", value="payment_methods", emoji="💳"),
             discord.SelectOption(label="Order Here", value="order_here", emoji="🛍️"),
-            discord.SelectOption(label="View Prices", value="prices", emoji="💰"),
+            # ❌ Removed "View Prices"
         ]
         super().__init__(placeholder="Choose an option...", min_values=1, max_values=1, options=options)
 
@@ -203,8 +204,6 @@ class XyooSelect(discord.ui.Select):
             await interaction.followup.send(embed=get_payment_methods_embed(), ephemeral=True)
         elif selected == "order_here":
             await start_order_flow(interaction)
-        elif selected == "prices":
-            await interaction.followup.send(embed=get_prices_embed(), ephemeral=True)
 
 class SelectView(discord.ui.View):
     def __init__(self):
@@ -234,6 +233,91 @@ class PanelSetupView(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.add_item(PanelChannelSelect())
+
+# ================== VOUCHING SYSTEM ==================
+class VouchModal(discord.ui.Modal, title="Leave a Vouch"):
+    rating = discord.ui.TextInput(
+        label="Rating (1-5)",
+        placeholder="Enter a number from 1 to 5",
+        required=True,
+        min_length=1,
+        max_length=1
+    )
+    review = discord.ui.TextInput(
+        label="Your Review",
+        style=discord.TextStyle.paragraph,
+        placeholder="Tell us about your experience...",
+        required=True,
+        max_length=500
+    )
+
+    def __init__(self, customer: discord.Member, order_channel: discord.TextChannel):
+        super().__init__()
+        self.customer = customer
+        self.order_channel = order_channel
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            rating = int(self.rating.value)
+            if not 1 <= rating <= 5:
+                raise ValueError
+        except ValueError:
+            await interaction.response.send_message(
+                "❌ Invalid rating. Please enter a number between 1 and 5.", ephemeral=True
+            )
+            return
+
+        review_text = self.review.value
+
+        vouch_channel = interaction.guild.get_channel(VOUCH_CHANNEL_ID)
+        if not vouch_channel:
+            await interaction.response.send_message(
+                "❌ Vouch channel not found. Contact the owner.", ephemeral=True
+            )
+            return
+
+        stars = "⭐" * rating
+        embed = discord.Embed(
+            title="🌟 New Vouch!",
+            description=f"**Customer:** {self.customer.mention}\n**Rating:** {stars}\n**Review:** {review_text}",
+            color=GOLD_COLOR,
+            timestamp=datetime.datetime.now()
+        )
+        embed.set_footer(text=f"Order channel: {self.order_channel.name}")
+        await vouch_channel.send(embed=embed)
+
+        await interaction.response.send_message(
+            "✅ Thank you for your vouch! This channel will be closed shortly.", ephemeral=True
+        )
+        await self.order_channel.send(f"🌟 {self.customer.mention} left a vouch: {stars}")
+        await asyncio.sleep(5)
+        await self.order_channel.delete()
+
+
+class VouchRequestView(discord.ui.View):
+    def __init__(self, customer: discord.Member, order_channel: discord.TextChannel):
+        super().__init__(timeout=600)  # 10 minutes
+        self.customer = customer
+        self.order_channel = order_channel
+
+    @discord.ui.button(label="Leave a Vouch", style=discord.ButtonStyle.success, emoji="🌟")
+    async def vouch_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user != self.customer:
+            await interaction.response.send_message("❌ Only the customer can leave a vouch.", ephemeral=True)
+            return
+        modal = VouchModal(self.customer, self.order_channel)
+        await interaction.response.send_modal(modal)
+
+    async def on_timeout(self):
+        try:
+            await self.order_channel.send("⏰ Vouch request timed out. Closing channel.")
+        except Exception:
+            pass
+        await asyncio.sleep(2)
+        try:
+            await self.order_channel.delete()
+        except Exception:
+            pass
 
 # ================== ORDER FLOW ==================
 async def start_order_flow(interaction: discord.Interaction):
@@ -370,7 +454,7 @@ async def create_order_ticket(interaction: discord.Interaction, order):
         ephemeral=True
     )
 
-# ================== REFRESH COMMAND ==================
+# ================== SLASH COMMANDS ==================
 @app_commands.command(name="refreshproducts", description="[Admin] Refresh the products cache immediately from the forum")
 @app_commands.default_permissions(administrator=True)
 async def refresh_products_command(interaction: discord.Interaction):
@@ -378,7 +462,6 @@ async def refresh_products_command(interaction: discord.Interaction):
     await bot._refresh_products()
     await interaction.followup.send(f"✅ Products refreshed! {len(bot.forum_cache)} games loaded.", ephemeral=True)
 
-# ================== OTHER SLASH COMMANDS ==================
 @app_commands.command(name="ping", description="🏓 Ping the bot")
 async def ping_command(interaction: discord.Interaction):
     await interaction.response.send_message(f"🏓 Pong! {bot.latency*1000:.0f}ms", ephemeral=True)
@@ -397,15 +480,49 @@ async def setup_command(interaction: discord.Interaction):
     view = PanelSetupView()
     await interaction.followup.send("📌 Select a channel:", view=view, ephemeral=True)
 
-@app_commands.command(name="request-vouch", description="[Admin] Ask for vouch (auto-closes)")
+@app_commands.command(name="request-vouch", description="[Admin] Ask the customer for a vouch and close the ticket")
 @app_commands.default_permissions(administrator=True)
 async def request_vouch_command(interaction: discord.Interaction):
-    pass
+    if interaction.channel.category_id != ORDER_CATEGORY_ID:
+        await interaction.response.send_message(
+            "❌ This command can only be used in an order ticket channel.", ephemeral=True
+        )
+        return
 
-@app_commands.command(name="close", description="[Admin] Close thread without vouch")
+    customer = None
+    for member, overwrite in interaction.channel.overwrites.items():
+        if isinstance(member, discord.Member) and not member.bot:
+            if overwrite.read_messages is True:
+                customer = member
+                break
+
+    if not customer:
+        await interaction.response.send_message("❌ Could not determine the customer.", ephemeral=True)
+        return
+
+    await interaction.response.defer(ephemeral=True)
+
+    embed = discord.Embed(
+        title="🌟 Vouch Request",
+        description=f"{customer.mention}, please take a moment to leave a vouch about your experience!",
+        color=EMBED_COLOR
+    )
+    view = VouchRequestView(customer, interaction.channel)
+    await interaction.channel.send(embed=embed, view=view)
+    await interaction.followup.send("✅ Vouch request sent to the customer.", ephemeral=True)
+
+@app_commands.command(name="close", description="[Admin] Force‑close the current order ticket channel")
 @app_commands.default_permissions(administrator=True)
 async def close_command(interaction: discord.Interaction):
-    pass
+    if interaction.channel.category_id != ORDER_CATEGORY_ID:
+        await interaction.response.send_message(
+            "❌ This command can only be used in an order ticket channel.", ephemeral=True
+        )
+        return
+
+    await interaction.response.send_message("🔒 Closing ticket...", ephemeral=True)
+    await asyncio.sleep(2)
+    await interaction.channel.delete()
 
 @bot.command(name="sync")
 @commands.is_owner()
@@ -416,7 +533,6 @@ async def sync_commands(ctx):
 
 # ================== STARTUP ==================
 async def main():
-    # Start the dummy web server in a thread for Render
     t = threading.Thread(target=run_web)
     t.daemon = True
     t.start()
