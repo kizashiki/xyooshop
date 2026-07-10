@@ -92,6 +92,7 @@ class XyooBot(commands.Bot):
         self.tree.add_command(xyoo_command)
         self.tree.add_command(setup_command)
         self.tree.add_command(refresh_products_command)
+        self.tree.add_command(reset_orders_command)   # <-- Reset counter command
 
         self.refresh_products.start()
 
@@ -569,6 +570,18 @@ async def refresh_products_command(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     await bot._refresh_products()
     await interaction.followup.send(f"✅ Products refreshed! {len(bot.forum_cache)} games.", ephemeral=True)
+
+@app_commands.command(name="resetorders", description="[Admin] Reset the order counter (next order will be #start_number+1)")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(start_number="Next order will be this number + 1 (e.g., 0 -> next is #0001)")
+async def reset_orders_command(interaction: discord.Interaction, start_number: int = 0):
+    if start_number < 0:
+        await interaction.response.send_message("❌ Start number cannot be negative.", ephemeral=True)
+        return
+    bot.order_counter = start_number
+    save_order_counter(start_number)
+    next_order = f"#{start_number + 1:04d}"
+    await interaction.response.send_message(f"✅ Order counter reset. Next order will be **{next_order}**.", ephemeral=True)
 
 @app_commands.command(name="ping", description="🏓 Ping")
 async def ping_command(interaction: discord.Interaction):
