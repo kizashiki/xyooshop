@@ -92,7 +92,7 @@ class XyooBot(commands.Bot):
         self.tree.add_command(xyoo_command)
         self.tree.add_command(setup_command)
         self.tree.add_command(refresh_products_command)
-        self.tree.add_command(reset_orders_command)   # <-- Reset counter command
+        self.tree.add_command(reset_orders_command)
 
         self.refresh_products.start()
 
@@ -180,7 +180,8 @@ class XyooSelect(discord.ui.Select):
             discord.SelectOption(label="💳 Payment Methods", value="payment_methods"),
             discord.SelectOption(label="🛍️ Order Here", value="order_here"),
         ]
-        super().__init__(placeholder="Navigate the system...", min_values=1, max_values=1, options=options)
+        # Changed placeholder to professional phrasing
+        super().__init__(placeholder="Select an option…", min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
@@ -296,7 +297,7 @@ async def start_order_flow(interaction: discord.Interaction):
                     order_data["payment"] = "GCash"
                     await create_order_ticket(pay_int, order_data)
 
-                    # Order confirmation embed (with full summary)
+                    # Ephemeral confirmation with full summary
                     embed_confirm = discord.Embed(title="✅ Order Created", color=GREEN_COLOR)
                     embed_confirm.add_field(name="Game", value=order_data['game'], inline=True)
                     embed_confirm.add_field(name="Item", value=order_data['item_line'], inline=False)
@@ -507,7 +508,7 @@ class VouchRequestView(discord.ui.View):
         except:
             pass
 
-# ================== ORDER TICKET CREATION ==================
+# ================== ORDER TICKET CREATION (with extra reminder) ==================
 async def create_order_ticket(interaction: discord.Interaction, order):
     guild = interaction.guild
     category = guild.get_channel(ORDER_CATEGORY_ID)
@@ -531,6 +532,7 @@ async def create_order_ticket(interaction: discord.Interaction, order):
 
     control_view = TicketControlView(order_id, interaction.user, channel)
 
+    # Main dashboard embed (without payment image yet, will be added below for GCash)
     embed = discord.Embed(title=f"🧾 Order {order_id}", color=CYBER_PURPLE,
                           description="**Thank you for your order!**\nPlease complete payment below.")
     embed.add_field(name="Game", value=order['game'], inline=True)
@@ -541,6 +543,15 @@ async def create_order_ticket(interaction: discord.Interaction, order):
     embed.add_field(name="Status", value="🟡 Pending Payment", inline=False)
     embed.set_footer(text="Xyoo Auto‑Shop • Automated")
 
+    # ===== NEW: Order Reminder message inside the ticket =====
+    reminder_text = (
+        f"📌 **Order Reminder**\n"
+        f"You ordered **{order['item_line']}** ×{order['qty']}\n"
+        f"Total to pay: **${order['total']:.2f}** via **{order['payment']}**\n"
+        f"Please complete the payment using the instructions below."
+    )
+    # ======================================================
+
     if order["payment"] == "GCash":
         if os.path.isfile(GCASH_IMAGE_FILENAME):
             file = discord.File(GCASH_IMAGE_FILENAME, filename="gcash-qr.jpg")
@@ -550,8 +561,11 @@ async def create_order_ticket(interaction: discord.Interaction, order):
             dashboard_msg = await channel.send(embed=embed, view=control_view)
             await channel.send(f"📱 GCash Payment\nNumber: **{GCASH_NUMBER}**\n(QR image not found)")
         control_view.dashboard_msg = dashboard_msg
+        # Send the reminder after the dashboard
+        await channel.send(reminder_text)
     else:
         dashboard_msg = await channel.send(embed=embed, view=control_view)
+        # Send PayPal instructions embed
         paypal_embed = discord.Embed(
             title="🌍 PayPal Payment",
             description=PAYPAL_MESSAGE,
@@ -560,6 +574,8 @@ async def create_order_ticket(interaction: discord.Interaction, order):
         payment_msg = await channel.send(embed=paypal_embed)
         control_view.dashboard_msg = dashboard_msg
         control_view.payment_msg = payment_msg
+        # Send the reminder after the payment instructions
+        await channel.send(reminder_text)
 
     await channel.send(f"<@{SUPPORT_USER_ID}> New order!", delete_after=5)
 
